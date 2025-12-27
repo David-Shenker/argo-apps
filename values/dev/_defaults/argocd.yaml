@@ -1,8 +1,9 @@
 # =============================================================================
-# Dev Environment Global Values for ArgoCD
+# Dev Environment Defaults for ArgoCD
 # =============================================================================
 # These values apply to ALL ArgoCD instances in the dev environment.
-# Hierarchy: values/global/ -> values/dev/global/ -> values/dev/<appset>/<ns>/<chart>/
+# Path: values/dev/_defaults/argocd.yaml (position 4 in hierarchy)
+# =============================================================================
 
 argo-cd:
   # Global settings for dev

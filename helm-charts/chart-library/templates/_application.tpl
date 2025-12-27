@@ -139,41 +139,41 @@ Generates the list of value files based on configuration
   {{- $chartName := $ctx.chartName | default "" -}}
   {{- $appReleaseName := $ctx.appReleaseName | default "" -}}
 
-  {{/* 1. Global values for all envs, all apps */}}
+  {{/* 1. Org-wide defaults for all envs, all apps */}}
   {{- if $prefix }}
-- {{ printf "%s/%s/global/global.yaml" $prefix $valuesDir | quote }}
+- {{ printf "%s/%s/_defaults/_all.yaml" $prefix $valuesDir | quote }}
   {{- else }}
-- {{ printf "/%s/global/global.yaml" $valuesDir | quote }}
+- {{ printf "/%s/_defaults/_all.yaml" $valuesDir | quote }}
   {{- end }}
 
-  {{/* 2. Global chart-specific values for all envs */}}
+  {{/* 2. Org-wide chart-specific defaults for all envs */}}
   {{- if $prefix }}
-- {{ printf "%s/%s/global/%s.yaml" $prefix $valuesDir $chartName | quote }}
+- {{ printf "%s/%s/_defaults/%s.yaml" $prefix $valuesDir $chartName | quote }}
   {{- else }}
-- {{ printf "/%s/global/%s.yaml" $valuesDir $chartName | quote }}
+- {{ printf "/%s/_defaults/%s.yaml" $valuesDir $chartName | quote }}
   {{- end }}
 
   {{/* 3. Cloud-specific values (if cloud is set) */}}
   {{- if $cloud }}
     {{- if $prefix }}
-- {{ printf "%s/%s/%s/%s.yaml" $prefix $valuesDir $cloud $chartName | quote }}
+- {{ printf "%s/%s/_defaults/%s/%s.yaml" $prefix $valuesDir $cloud $chartName | quote }}
     {{- else }}
-- {{ printf "/%s/%s/%s.yaml" $valuesDir $cloud $chartName | quote }}
+- {{ printf "/%s/_defaults/%s/%s.yaml" $valuesDir $cloud $chartName | quote }}
     {{- end }}
   {{- end }}
 
-  {{/* 4. Environment global values for all apps in this env */}}
+  {{/* 4. Environment defaults for all apps in this env */}}
   {{- if $prefix }}
-- {{ printf "%s/%s/%s/global-env.yaml" $prefix $valuesDir $cluster | quote }}
+- {{ printf "%s/%s/%s/_defaults/_all.yaml" $prefix $valuesDir $cluster | quote }}
   {{- else }}
-- {{ printf "/%s/%s/global-env.yaml" $valuesDir $cluster | quote }}
+- {{ printf "/%s/%s/_defaults/_all.yaml" $valuesDir $cluster | quote }}
   {{- end }}
 
-  {{/* 5. Environment chart-specific values */}}
+  {{/* 5. Environment chart-specific defaults */}}
   {{- if $prefix }}
-- {{ printf "%s/%s/%s/global/%s.yaml" $prefix $valuesDir $cluster $chartName | quote }}
+- {{ printf "%s/%s/%s/_defaults/%s.yaml" $prefix $valuesDir $cluster $chartName | quote }}
   {{- else }}
-- {{ printf "/%s/%s/global/%s.yaml" $valuesDir $cluster $chartName | quote }}
+- {{ printf "/%s/%s/_defaults/%s.yaml" $valuesDir $cluster $chartName | quote }}
   {{- end }}
 
   {{/* 6. App-specific values */}}
@@ -211,3 +211,4 @@ Default Sync Policy (backwards compatibility alias)
 {{- define "chart-library.application.defaultSyncPolicy" -}}
 {{- include "chart-library.application.syncPolicy" . -}}
 {{- end }}
+

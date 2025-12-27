@@ -1,14 +1,14 @@
 # =============================================================================
-# Global Values - All Environments, All Apps
+# Organization Defaults - All Environments, All Apps
 # =============================================================================
 # These values are the FIRST to be loaded for ALL applications across ALL
 # environments. Use this for organization-wide defaults.
 #
 # Hierarchy:
-#   1. values/global/global.yaml          <- YOU ARE HERE (all envs, all apps)
-#   2. values/global/<chart>.yaml         (all envs, chart-specific)
-#   3. values/<env>/global-env.yaml       (env-specific, all apps)
-#   4. values/<env>/global/<chart>.yaml   (env-specific, chart-specific)
+#   1. values/_defaults/_all.yaml           <- YOU ARE HERE (all envs, all apps)
+#   2. values/_defaults/<chart>.yaml        (all envs, chart-specific)
+#   3. values/<env>/_defaults/_all.yaml     (env-specific, all apps)
+#   4. values/<env>/_defaults/<chart>.yaml  (env-specific, chart-specific)
 #   5. values/<env>/<appset>/<ns>/<chart>/<release>.yaml (app-specific)
 # =============================================================================
 
@@ -32,4 +32,3 @@ defaultReplicas: 1
 
 # Default image pull policy
 defaultImagePullPolicy: IfNotPresent
-

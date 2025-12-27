@@ -1,15 +1,15 @@
 # =============================================================================
-# Dev Environment Global Values - All Apps
+# Dev Environment Defaults - All Apps
 # =============================================================================
 # These values apply to ALL applications in the dev environment.
-# Use this for environment-wide settings like resource constraints, 
+# Use this for environment-wide settings like resource constraints,
 # replicas, or environment-specific configurations.
 #
 # Hierarchy:
-#   1. values/global/global.yaml          (all envs, all apps)
-#   2. values/global/<chart>.yaml         (all envs, chart-specific)
-#   3. values/<env>/global-env.yaml       <- YOU ARE HERE (dev env, all apps)
-#   4. values/<env>/global/<chart>.yaml   (dev env, chart-specific)
+#   1. values/_defaults/_all.yaml           (all envs, all apps)
+#   2. values/_defaults/<chart>.yaml        (all envs, chart-specific)
+#   3. values/<env>/_defaults/_all.yaml     <- YOU ARE HERE (dev env, all apps)
+#   4. values/<env>/_defaults/<chart>.yaml  (dev env, chart-specific)
 #   5. values/<env>/<appset>/<ns>/<chart>/<release>.yaml (app-specific)
 # =============================================================================
 
@@ -32,4 +32,3 @@ defaultReplicas: 1
 
 # Always pull in dev for faster iteration
 defaultImagePullPolicy: Always
-

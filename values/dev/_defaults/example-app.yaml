@@ -1,11 +1,11 @@
 # =============================================================================
-# Global Values for example-app
+# Dev Environment Defaults for example-app
 # =============================================================================
-# These values apply to ALL clusters.
-# Can be overridden by cloud-specific, cluster-specific, or app-specific values.
+# These values apply to ALL example-app instances in the dev environment.
+# Path: values/dev/_defaults/example-app.yaml (position 4 in hierarchy)
 # =============================================================================
 
-# Default resources for all environments
+# Dev-specific defaults - lower resources for development
 deployments:
   - name: example-app
     namespace: default
@@ -18,8 +18,8 @@ deployments:
           tag: alpine
         resources:
           requests:
-            cpu: 10m
-            memory: 32Mi
+            cpu: 5m
+            memory: 16Mi
           limits:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 50m
+            memory: 64Mi

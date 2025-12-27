@@ -1,7 +1,8 @@
 # =============================================================================
-# Global Values for ArgoCD
+# Organization Defaults for ArgoCD
 # =============================================================================
-# These values apply to ALL clusters.
+# These values apply to ALL ArgoCD instances across ALL environments.
+# Path: values/_defaults/argocd.yaml (position 2 in hierarchy)
 # =============================================================================
 
 argo-cd:
