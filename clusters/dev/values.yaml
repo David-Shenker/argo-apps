@@ -5,8 +5,11 @@ cluster:
 
 # Repository Configuration
 repo:
-  url: "git@github.com:David-Shenker/argo-apps.git"
-  revision: dev
+  # Use SSH for private repositories
+  # url: "git@github.com:David-Shenker/argo-apps.git"
+  # Use HTTPS for public repositories
+  url: "https://github.com/David-Shenker/argo-apps.git"
+  revision: master
 
 # Chart Repository Configuration (for multi-source)
 chart:
