@@ -32,18 +32,43 @@ paths:
   # Base directory for values files
   values: "values"
 
-  # Values file hierarchy (ordered list of paths to search for values)
-  # Available variables: {{ .cluster }}, {{ .cloud }}, {{ .namespace }},
-  #                      {{ .chartName }}, {{ .appSetName }}, {{ .appReleaseName }}
-  valueFiles:
-    # Global values (applies to all clusters)
-    - "{{ .valuesDir }}/global/{{ .chartName }}.yaml"
-    # Cloud-specific global values (optional)
-    - "{{ .valuesDir }}/{{ .cloud }}/{{ .chartName }}.yaml"
-    # Cluster base values
-    - "{{ .valuesDir }}/{{ .cluster }}/base/{{ .chartName }}.yaml"
-    # App-specific values (most specific)
-    - "{{ .valuesDir }}/{{ .cluster }}/{{ .appSetName }}/{{ .namespace }}/{{ .chartName }}/{{ .appReleaseName }}.yaml"
+  # =============================================================================
+  # Value Files Hierarchy
+  # =============================================================================
+  # Configure the order and structure of value files for your applications.
+  #
+  # Available variables (evaluated at Helm template time):
+  #   {{ .valuesDir }}      - Base values directory (from paths.values)
+  #   {{ .cluster }}        - Cluster name
+  #   {{ .cloud }}          - Cloud provider (optional)
+  #   {{ .appSetName }}     - ApplicationSet name
+  #   {{ .namespace }}      - Target namespace
+  #   {{ .chartName }}      - Chart name
+  #   {{ .releaseName }}    - Release name
+  #
+  # For ApplicationSet templates, these become Go template expressions:
+  #   namespace  -> {{ index .path.segments <namespaceSegment> }}
+  #   chartName  -> {{ index .path.segments <chartNameSegment> }}
+  #   releaseName -> {{ trimSuffix ".yaml" .path.filename }}
+  # =============================================================================
+
+  # Value files for App-of-Apps (static paths, known at Helm time)
+  appofappsValueFiles:
+    - "{{ .valuesDir }}/_defaults/_all.yaml"
+    - "{{ .valuesDir }}/_defaults/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/_defaults/{{ .cloud }}/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/_all.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"
+
+  # Value files for ApplicationSet generated applications
+  # These support both Helm-time and ArgoCD-time (Go template) variables
+  appSetValueFiles:
+    - "{{ .valuesDir }}/_defaults/_all.yaml"
+    - "{{ .valuesDir }}/_defaults/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/_defaults/{{ .cloud }}/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/_all.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/{{ .appSetName }}/{{ .namespace }}/{{ .chartName }}/{{ .releaseName }}.yaml"
 
 # =============================================================================
 # Cluster Configuration
@@ -93,8 +118,8 @@ generator:
   # Path segment indices for extracting values from file path
   # Adjust these if you change the path pattern
   segments:
-    namespace: 3      # Index for namespace in path
-    chartName: 4      # Index for chart name in path
+    namespace: 3 # Index for namespace in path
+    chartName: 4 # Index for chart name in path
 
 # =============================================================================
 # ApplicationSet Definitions (to be set in cluster values)
@@ -106,7 +131,8 @@ appSets: {}
 #    preserveResourcesOnDeletion: false
 #    sourceTargetRevision: "main"
 #    chartVersion: "1.0.0"
-#    template: {}  # Override application template
+#    valueFiles: []   # Override value files for this appset
+#    template: {}     # Override application template
 
 # =============================================================================
 # App-of-Apps Definitions (to be set in cluster values)
@@ -117,6 +143,5 @@ appofapps: {}
 #      enabled: true
 #      project: "default"
 #      multiSource: false
-#      valueFiles: []
+#      valueFiles: []   # Override value files for this app
 #      syncPolicy: {}
-
