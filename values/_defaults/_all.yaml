@@ -1,25 +1,10 @@
-# =============================================================================
-# Organization Defaults - All Environments, All Apps
-# =============================================================================
-# These values are the FIRST to be loaded for ALL applications across ALL
-# environments. Use this for organization-wide defaults.
-#
-# Hierarchy:
-#   1. values/_defaults/_all.yaml           <- YOU ARE HERE (all envs, all apps)
-#   2. values/_defaults/<chart>.yaml        (all envs, chart-specific)
-#   3. values/<env>/_defaults/_all.yaml     (env-specific, all apps)
-#   4. values/<env>/_defaults/<chart>.yaml  (env-specific, chart-specific)
-#   5. values/<env>/<appset>/<ns>/<chart>/<release>.yaml (app-specific)
-# =============================================================================
+# Organization defaults - all clusters, all apps
 
-# Organization-wide labels applied to all resources
-# Uses common_defaults.labels which global-templates reads
 common_defaults:
   labels:
     managed-by: argocd
     organization: my-org
 
-# Default resource requests/limits for all apps
 defaultResources:
   requests:
     cpu: 10m
@@ -28,8 +13,5 @@ defaultResources:
     cpu: 100m
     memory: 128Mi
 
-# Default replica count
 defaultReplicas: 1
-
-# Default image pull policy
 defaultImagePullPolicy: IfNotPresent

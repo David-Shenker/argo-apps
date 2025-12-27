@@ -1,11 +1,5 @@
-# =============================================================================
-# Organization Defaults for example-app
-# =============================================================================
-# These values apply to ALL example-app instances across ALL environments.
-# Path: values/_defaults/example-app.yaml (position 2 in hierarchy)
-# =============================================================================
+# Defaults for example-app across all environments
 
-# Default resources for all environments
 deployments:
   - name: example-app
     namespace: default

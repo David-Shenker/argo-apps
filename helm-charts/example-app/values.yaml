@@ -1,7 +1,5 @@
 # Default values for example-app
-# Uses global-templates library for Kubernetes resources
 
-# Deployment configuration
 deployments:
   - name: example-app
     namespace: default
@@ -45,7 +43,6 @@ deployments:
         configMap:
           name: example-app-html
 
-# Service configuration
 services:
   - name: example-app
     namespace: default
@@ -56,7 +53,6 @@ services:
         targetPort: 80
         protocol: TCP
 
-# ConfigMap configuration
 configmaps:
   - name: example-app-html
     namespace: default
@@ -91,7 +87,7 @@ configmaps:
         </head>
         <body>
             <div class="container">
-                <h1>🚀 Hello from example-app!</h1>
+                <h1>Hello from example-app!</h1>
                 <p>Deployed via ArgoCD GitOps</p>
                 <div class="info">
                     Using global-templates library
@@ -100,6 +96,5 @@ configmaps:
         </body>
         </html>
 
-# Custom message (can be overridden in values)
 config:
   message: "Hello from example-app!"

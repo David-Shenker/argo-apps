@@ -1,20 +1,3 @@
-# =============================================================================
-# My second App - Example Application Deployment
-# =============================================================================
-# This file will be discovered by the "general" ApplicationSet and
-# automatically create an ArgoCD Application that deploys example-app
-# to the "default" namespace.
-#
-# Path breakdown:
-#   values/dev/general/default/example-app/my-second-app.yaml
-#          │    │       │       │           └── Release name
-#          │    │       │       └── Chart name (matches helm-charts/example-app)
-#          │    │       └── Target namespace
-#          │    └── ApplicationSet name (must be enabled in appsets.yaml)
-#          └── Cluster name
-# =============================================================================
-
-# Override deployment settings
 deployments:
   - name: example-app-second
     namespace: default
@@ -58,7 +41,6 @@ deployments:
         configMap:
           name: example-app-second-html
 
-# Service configuration
 services:
   - name: example-app-second
     namespace: default
@@ -69,7 +51,6 @@ services:
         targetPort: 80
         protocol: TCP
 
-# ConfigMap with custom message
 configmaps:
   - name: example-app-second-html
     namespace: default
@@ -105,8 +86,8 @@ configmaps:
         </head>
         <body>
             <div class="container">
-                <h1>🎉 Welcome to My Second App!</h1>
-                <p>Successfully deployed via ArgoCD GitOps</p>
+                <h1>Welcome to My Second App!</h1>
+                <p>Deployed via ArgoCD GitOps</p>
                 <div class="info">
                     Cluster: dev | Namespace: default
                 </div>
@@ -114,10 +95,7 @@ configmaps:
         </body>
         </html>
 
-# =============================================================================
-# ArgoCD Application Overrides (Optional)
-# =============================================================================
 application:
   metadata:
     annotations:
-      description: "My Second test application deployed via ArgoCD"
+      description: "My second test application deployed via ArgoCD"

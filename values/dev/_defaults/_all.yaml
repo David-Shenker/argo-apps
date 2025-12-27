@@ -1,24 +1,9 @@
-# =============================================================================
-# Dev Environment Defaults - All Apps
-# =============================================================================
-# These values apply to ALL applications in the dev environment.
-# Use this for environment-wide settings like resource constraints,
-# replicas, or environment-specific configurations.
-#
-# Hierarchy:
-#   1. values/_defaults/_all.yaml           (all envs, all apps)
-#   2. values/_defaults/<chart>.yaml        (all envs, chart-specific)
-#   3. values/<env>/_defaults/_all.yaml     <- YOU ARE HERE (dev env, all apps)
-#   4. values/<env>/_defaults/<chart>.yaml  (dev env, chart-specific)
-#   5. values/<env>/<appset>/<ns>/<chart>/<release>.yaml (app-specific)
-# =============================================================================
+# Dev environment defaults - all apps
 
-# Dev environment labels (merged with org-wide labels from _defaults/_all.yaml)
 common_defaults:
   labels:
     environment: dev
 
-# Lower resources for dev environment
 defaultResources:
   requests:
     cpu: 5m
@@ -27,8 +12,5 @@ defaultResources:
     cpu: 50m
     memory: 64Mi
 
-# Single replica in dev
 defaultReplicas: 1
-
-# Always pull in dev for faster iteration
 defaultImagePullPolicy: Always

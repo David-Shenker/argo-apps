@@ -1,78 +1,36 @@
-# Chart Library Default Configuration
-# These values can be overridden in your cluster chart
-
-# =============================================================================
 # Repository Configuration
-# =============================================================================
 repo:
-  # Git repository URL for manifests/charts
   url: ""
-  # Default branch/revision
   revision: "HEAD"
 
-# =============================================================================
-# Chart Configuration (for multi-source)
-# =============================================================================
+# Chart Repository (for multi-source)
 chart:
-  # Chart repository URL (e.g., Chartmuseum, Harbor)
   repoURL: ""
-  # Default chart version
   version: "1.0.0"
 
-# =============================================================================
 # Directory Paths
-# =============================================================================
 paths:
-  # Base directory for Helm charts (single-source mode)
   charts: "helm-charts"
-
-  # Base directory for cluster definitions
   clusters: "clusters"
-
-  # Base directory for values files
   values: "values"
-
-  # Value files hierarchy - define in your cluster values.yaml
-  # Available variables:
-  #   {{ .valuesDir }}    - Base values directory
-  #   {{ .cluster }}      - Cluster name
-  #   {{ .cloud }}        - Cloud provider (optional)
-  #   {{ .appSetName }}   - ApplicationSet name
-  #   {{ .namespace }}    - Target namespace
-  #   {{ .chartName }}    - Chart name
-  #   {{ .releaseName }}  - Release name
   appofappsValueFiles: []
   appSetValueFiles: []
 
-# =============================================================================
 # Cluster Configuration
-# =============================================================================
 cluster:
-  # Cluster name (required)
   name: ""
-  # Cloud provider (aws, gcp, azure, on-prem, etc.) - optional
   cloud: ""
 
-# =============================================================================
 # Application Defaults
-# =============================================================================
 defaults:
-  # ArgoCD namespace
   argocdNamespace: "argocd"
-  # Default project for applications
   project: "default"
-  # Kubernetes API server
   server: "https://kubernetes.default.svc"
-  # Use multi-source by default
   multiSource: false
-  # Recurse submodules in git
   recurseSubmodules: false
-  # Ignore missing value files
   ignoreMissingValueFiles: true
 
-# =============================================================================
 # Sync Policy Defaults
-# =============================================================================
 syncPolicy:
   automated:
     prune: true
@@ -82,25 +40,13 @@ syncPolicy:
     - ApplyOutOfSyncOnly=true
     - CreateNamespace=true
 
-# =============================================================================
-# ApplicationSet Generator Configuration
-# =============================================================================
+# ApplicationSet Generator
 generator:
-  # Git file generator path pattern
-  # Available variables: {{ .valuesDir }}, {{ .cluster }}, {{ .appSetName }}
   pathPattern: "{{ .valuesDir }}/{{ .cluster }}/{{ .appSetName }}/*/*/*.yaml"
-  # Path segment indices for extracting values from file path
-  # Adjust these if you change the path pattern
   segments:
     namespace: 3
     chartName: 4
 
-# =============================================================================
-# ApplicationSet Definitions (to be set in cluster values)
-# =============================================================================
+# Definitions (set in cluster values)
 appSets: {}
-
-# =============================================================================
-# App-of-Apps Definitions (to be set in cluster values)
-# =============================================================================
 appofapps: {}

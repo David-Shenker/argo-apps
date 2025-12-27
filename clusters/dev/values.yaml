@@ -1,36 +1,25 @@
-# Cluster Configuration
 cluster:
   name: dev
-  cloud: "" # Optional: aws, gcp, azure, on-prem
+  cloud: ""
 
-# Repository Configuration
 repo:
-  # Use SSH for private repositories
-  # url: "git@github.com:David-Shenker/argo-apps.git"
-  # Use HTTPS for public repositories
   url: "https://github.com/David-Shenker/argo-apps.git"
   revision: dev
 
-# Chart Repository Configuration (for multi-source)
 chart:
   repoURL: ""
   version: "*"
 
-# Path Configuration
 paths:
   values: "values"
   charts: "helm-charts"
   clusters: "clusters"
-
-  # Value files for App-of-Apps (static paths, known at Helm time)
   appofappsValueFiles:
     - "{{ .valuesDir }}/_defaults/_all.yaml"
     - "{{ .valuesDir }}/_defaults/{{ .chartName }}.yaml"
     - "{{ .valuesDir }}/_defaults/{{ .cloud }}/{{ .chartName }}.yaml"
     - "{{ .valuesDir }}/{{ .cluster }}/_defaults/_all.yaml"
     - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"
-
-  # Value files for ApplicationSet generated applications
   appSetValueFiles:
     - "{{ .valuesDir }}/_defaults/_all.yaml"
     - "{{ .valuesDir }}/_defaults/{{ .chartName }}.yaml"
@@ -39,14 +28,12 @@ paths:
     - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"
     - "{{ .valuesDir }}/{{ .cluster }}/{{ .appSetName }}/{{ .namespace }}/{{ .chartName }}/{{ .releaseName }}.yaml"
 
-# Defaults
 defaults:
-  multiSource: false # Set to true if using chart repository (multi-source)
+  multiSource: false
   argocdNamespace: "argocd"
   project: "default"
-  parentInstance: "appofapps--argocd" # Links ApplicationSets to App-of-Apps in ArgoCD UI
+  parentInstance: "appofapps--argocd"
 
-# App-of-Apps Definitions
 appofapps:
   argocd:
     appofapps:
@@ -55,7 +42,7 @@ appofapps:
       chartVersion: "1.0.0"
       labels:
         argocd.argoproj.io/instance: appofapps--argocd
-      disableFinalizers: true # Failsafe to prevent deletion of everything
+      disableFinalizers: true
       valueFiles:
         - "{{ .sourcePath }}/appsets.yaml"
         - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"

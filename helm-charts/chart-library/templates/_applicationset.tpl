@@ -1,11 +1,3 @@
-{{/*
-=============================================================================
-ApplicationSet Template
-Generates ArgoCD ApplicationSet resources
-Usage: {{ include "chart-library.applicationset" . }}
-=============================================================================
-*/}}
-
 {{- define "chart-library.applicationset" -}}
 {{- $defaults := .Values.defaults | default dict -}}
 {{- $paths := .Values.paths | default dict -}}
@@ -25,11 +17,7 @@ Usage: {{ include "chart-library.applicationset" . }}
 {{- $repoURL := $appSet.repoURL | default $repo.url | required "repo.url is required" -}}
 {{- $revision := $appSet.revision | default $repo.revision | default "HEAD" -}}
 {{- $pathPattern := $appSet.pathPattern | default (printf "%s/%s/%s/*/*/*.yaml" $valuesDir $cluster $appSetName) -}}
-
-{{- /* Go template expressions for dynamic app generation */ -}}
 {{- $goTpl := include "chart-library.appSetGoTpl" (dict "segments" $segments) | fromYaml -}}
-
-{{- /* Build value files using helper */ -}}
 {{- $valueFilesArgs := dict
     "appSet" $appSet
     "paths" $paths
@@ -132,12 +120,6 @@ spec:
 {{- end }}
 {{- end }}
 
-
-{{/*
-=============================================================================
-Backwards compatibility alias
-=============================================================================
-*/}}
 {{- define "cluster.applicationset" -}}
 {{- include "chart-library.applicationset" . -}}
 {{- end }}

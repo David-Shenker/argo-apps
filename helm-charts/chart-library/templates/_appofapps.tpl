@@ -1,11 +1,3 @@
-{{/*
-=============================================================================
-App-of-Apps Template
-Generates ArgoCD Application resources for app-of-apps pattern
-Usage: {{ include "chart-library.appofapps" . }}
-=============================================================================
-*/}}
-
 {{- define "chart-library.appofapps" -}}
 {{- $defaults := .Values.defaults | default dict -}}
 {{- $paths := .Values.paths | default dict -}}
@@ -106,12 +98,6 @@ spec:
 {{- end }}
 {{- end }}
 
-
-{{/*
-=============================================================================
-Backwards compatibility alias
-=============================================================================
-*/}}
 {{- define "cluster.appofapps" -}}
 {{- include "chart-library.appofapps" . -}}
 {{- end }}

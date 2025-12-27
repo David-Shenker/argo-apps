@@ -1,42 +1,25 @@
-# =============================================================================
-# Example: Cloud-Specific Values
-# =============================================================================
-# Place this file in: values/<cloud>/<chart>.yaml
+# Place at: values/<cloud>/<chart>.yaml
 # Example: values/aws/external-dns.yaml
-#
-# When cluster.cloud is set, the chart library will include cloud-specific
-# values in the hierarchy:
-#
-#   1. values/global/<chart>.yaml           (all clusters)
-#   2. values/aws/<chart>.yaml              (all AWS clusters)  <-- This file
-#   3. values/<cluster>/base/<chart>.yaml   (specific cluster)
-#   4. values/<cluster>/<appset>/...        (specific app)
-# =============================================================================
+# Loaded when cluster.cloud is set
 
-# AWS-specific configuration for external-dns
 provider: aws
 
 aws:
   region: us-east-1
   zoneType: public
-  # Use IRSA (IAM Roles for Service Accounts)
   assumeRoleArn: ""
 
-# AWS-specific annotations for IRSA
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/external-dns
 
-# AWS-specific resource configurations
 resources:
   requests:
     cpu: 50m
     memory: 64Mi
 
-# Domain filters specific to AWS environment
 domainFilters:
   - example.com
   - aws.example.com
 
 txtOwnerId: "external-dns-aws"
-

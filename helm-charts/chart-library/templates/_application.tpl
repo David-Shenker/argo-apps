@@ -1,11 +1,3 @@
-{{/*
-=============================================================================
-Application Template
-Generates ArgoCD Application resources
-Usage: {{ include "chart-library.application" (dict "applications" .Values.applications "Values" .Values "Template" .Template) }}
-=============================================================================
-*/}}
-
 {{- define "chart-library.application" -}}
 {{- $defaults := .Values.defaults | default dict -}}
 {{- $paths := .Values.paths | default dict -}}
@@ -83,15 +75,6 @@ spec:
 {{- end }}
 {{- end }}
 
-
-{{/*
-=============================================================================
-Single Application Spec (for embedding in other templates)
-Returns just the application spec without apiVersion/kind wrapper
-Usage: {{ include "chart-library.application.spec" $appContext }}
-=============================================================================
-*/}}
-
 {{- define "chart-library.application.spec" -}}
 {{- $multiSource := eq (toString (.multiSource | default false)) "true" -}}
 metadata:
@@ -153,13 +136,6 @@ spec:
   {{- end }}
   syncPolicy: {{ include "chart-library.syncPolicy" (dict "syncPolicy" .syncPolicy "defaults" dict) | nindent 4 }}
 {{- end }}
-
-
-{{/*
-=============================================================================
-Backwards compatibility aliases
-=============================================================================
-*/}}
 
 {{- define "chart-library.application.syncPolicy" -}}
 {{- include "chart-library.syncPolicy" . -}}

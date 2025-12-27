@@ -1,18 +1,11 @@
-# =============================================================================
-# Dev Environment Defaults for ArgoCD
-# =============================================================================
-# These values apply to ALL ArgoCD instances in the dev environment.
-# Path: values/dev/_defaults/argocd.yaml (position 4 in hierarchy)
-# =============================================================================
+# Dev environment defaults for ArgoCD
 
 argo-cd:
-  # Global settings for dev
   global:
     logging:
       format: text
       level: info
 
-  # Single replica for dev
   controller:
     replicas: 1
 
@@ -25,11 +18,8 @@ argo-cd:
   applicationSet:
     replicas: 1
 
-  # Notifications enabled
   notifications:
     enabled: true
 
-  # Dex disabled for dev
   dex:
     enabled: false
-
