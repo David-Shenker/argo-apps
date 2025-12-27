@@ -139,14 +139,21 @@ Generates the list of value files based on configuration
   {{- $chartName := $ctx.chartName | default "" -}}
   {{- $appReleaseName := $ctx.appReleaseName | default "" -}}
 
-  {{/* Global values */}}
+  {{/* 1. Global values for all envs, all apps */}}
+  {{- if $prefix }}
+- {{ printf "%s/%s/global/global.yaml" $prefix $valuesDir | quote }}
+  {{- else }}
+- {{ printf "/%s/global/global.yaml" $valuesDir | quote }}
+  {{- end }}
+
+  {{/* 2. Global chart-specific values for all envs */}}
   {{- if $prefix }}
 - {{ printf "%s/%s/global/%s.yaml" $prefix $valuesDir $chartName | quote }}
   {{- else }}
 - {{ printf "/%s/global/%s.yaml" $valuesDir $chartName | quote }}
   {{- end }}
 
-  {{/* Cloud-specific values (if cloud is set) */}}
+  {{/* 3. Cloud-specific values (if cloud is set) */}}
   {{- if $cloud }}
     {{- if $prefix }}
 - {{ printf "%s/%s/%s/%s.yaml" $prefix $valuesDir $cloud $chartName | quote }}
@@ -155,14 +162,21 @@ Generates the list of value files based on configuration
     {{- end }}
   {{- end }}
 
-  {{/* Cluster global values (env-specific) */}}
+  {{/* 4. Environment global values for all apps in this env */}}
+  {{- if $prefix }}
+- {{ printf "%s/%s/%s/global-env.yaml" $prefix $valuesDir $cluster | quote }}
+  {{- else }}
+- {{ printf "/%s/%s/global-env.yaml" $valuesDir $cluster | quote }}
+  {{- end }}
+
+  {{/* 5. Environment chart-specific values */}}
   {{- if $prefix }}
 - {{ printf "%s/%s/%s/global/%s.yaml" $prefix $valuesDir $cluster $chartName | quote }}
   {{- else }}
 - {{ printf "/%s/%s/global/%s.yaml" $valuesDir $cluster $chartName | quote }}
   {{- end }}
 
-  {{/* App-specific values */}}
+  {{/* 6. App-specific values */}}
   {{- if and $appSetName $namespace $appReleaseName }}
     {{- if $prefix }}
 - {{ printf "%s/%s/%s/%s/%s/%s/%s.yaml" $prefix $valuesDir $cluster $appSetName $namespace $chartName $appReleaseName | quote }}
