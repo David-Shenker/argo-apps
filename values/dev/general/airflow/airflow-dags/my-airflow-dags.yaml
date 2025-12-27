@@ -1,0 +1,365 @@
+# Airflow DAGs deployment for dev cluster
+# Contains 3 example DAGs deployed as ConfigMaps
+
+configmaps:
+  # DAG 1: Data Pipeline - ETL workflow
+  - name: dag-data-pipeline
+    namespace: airflow
+    file_content:
+      data_pipeline.py: |
+        """
+        Data Pipeline DAG
+        Extracts data from source, transforms it, and loads to destination
+        """
+        from datetime import datetime, timedelta
+        from airflow import DAG
+        from airflow.operators.python import PythonOperator
+        from airflow.operators.bash import BashOperator
+
+        default_args = {
+            'owner': 'data-team',
+            'depends_on_past': False,
+            'email_on_failure': False,
+            'email_on_retry': False,
+            'retries': 2,
+            'retry_delay': timedelta(minutes=5),
+        }
+
+        def extract_data(**context):
+            """Extract data from source"""
+            print("Extracting data from source system...")
+            data = {"records": 1000, "source": "api", "timestamp": str(datetime.now())}
+            context['ti'].xcom_push(key='extracted_data', value=data)
+            return data
+
+        def transform_data(**context):
+            """Transform extracted data"""
+            ti = context['ti']
+            data = ti.xcom_pull(key='extracted_data', task_ids='extract')
+            print(f"Transforming {data['records']} records...")
+            transformed = {
+                **data,
+                "transformed": True,
+                "records_processed": data['records'],
+            }
+            ti.xcom_push(key='transformed_data', value=transformed)
+            return transformed
+
+        def load_data(**context):
+            """Load data to destination"""
+            ti = context['ti']
+            data = ti.xcom_pull(key='transformed_data', task_ids='transform')
+            print(f"Loading {data['records_processed']} records to destination...")
+            return {"status": "success", "loaded_records": data['records_processed']}
+
+        with DAG(
+            'data_pipeline',
+            default_args=default_args,
+            description='ETL data pipeline for processing records',
+            schedule_interval='0 */6 * * *',  # Every 6 hours
+            start_date=datetime(2024, 1, 1),
+            catchup=False,
+            tags=['etl', 'data', 'pipeline'],
+        ) as dag:
+
+            extract = PythonOperator(
+                task_id='extract',
+                python_callable=extract_data,
+            )
+
+            transform = PythonOperator(
+                task_id='transform',
+                python_callable=transform_data,
+            )
+
+            load = PythonOperator(
+                task_id='load',
+                python_callable=load_data,
+            )
+
+            cleanup = BashOperator(
+                task_id='cleanup',
+                bash_command='echo "Pipeline completed successfully at $(date)"',
+            )
+
+            extract >> transform >> load >> cleanup
+
+  # DAG 2: Health Check - System monitoring
+  - name: dag-health-check
+    namespace: airflow
+    file_content:
+      health_check.py: |
+        """
+        Health Check DAG
+        Monitors system health and sends alerts if issues detected
+        """
+        from datetime import datetime, timedelta
+        from airflow import DAG
+        from airflow.operators.python import PythonOperator, BranchPythonOperator
+        from airflow.operators.bash import BashOperator
+        from airflow.operators.empty import EmptyOperator
+        import random
+
+        default_args = {
+            'owner': 'platform-team',
+            'depends_on_past': False,
+            'email_on_failure': True,
+            'retries': 1,
+            'retry_delay': timedelta(minutes=2),
+        }
+
+        def check_api_health(**context):
+            """Check API endpoint health"""
+            # Simulate API health check
+            status = random.choice(['healthy', 'healthy', 'healthy', 'degraded'])
+            print(f"API Status: {status}")
+            context['ti'].xcom_push(key='api_status', value=status)
+            return status
+
+        def check_database_health(**context):
+            """Check database connectivity"""
+            # Simulate DB health check
+            status = random.choice(['healthy', 'healthy', 'healthy', 'unhealthy'])
+            print(f"Database Status: {status}")
+            context['ti'].xcom_push(key='db_status', value=status)
+            return status
+
+        def check_cache_health(**context):
+            """Check cache (Redis) health"""
+            status = 'healthy'
+            print(f"Cache Status: {status}")
+            context['ti'].xcom_push(key='cache_status', value=status)
+            return status
+
+        def evaluate_health(**context):
+            """Evaluate overall system health and decide on action"""
+            ti = context['ti']
+            api_status = ti.xcom_pull(key='api_status', task_ids='check_api')
+            db_status = ti.xcom_pull(key='db_status', task_ids='check_database')
+            cache_status = ti.xcom_pull(key='cache_status', task_ids='check_cache')
+
+            all_healthy = all(s == 'healthy' for s in [api_status, db_status, cache_status])
+
+            if all_healthy:
+                return 'all_healthy'
+            else:
+                return 'send_alert'
+
+        def send_alert(**context):
+            """Send alert for unhealthy systems"""
+            ti = context['ti']
+            print("ALERT: System health check failed!")
+            print(f"API: {ti.xcom_pull(key='api_status', task_ids='check_api')}")
+            print(f"DB: {ti.xcom_pull(key='db_status', task_ids='check_database')}")
+            print(f"Cache: {ti.xcom_pull(key='cache_status', task_ids='check_cache')}")
+
+        with DAG(
+            'health_check',
+            default_args=default_args,
+            description='System health monitoring DAG',
+            schedule_interval='*/15 * * * *',  # Every 15 minutes
+            start_date=datetime(2024, 1, 1),
+            catchup=False,
+            tags=['monitoring', 'health', 'alerts'],
+        ) as dag:
+
+            check_api = PythonOperator(
+                task_id='check_api',
+                python_callable=check_api_health,
+            )
+
+            check_database = PythonOperator(
+                task_id='check_database',
+                python_callable=check_database_health,
+            )
+
+            check_cache = PythonOperator(
+                task_id='check_cache',
+                python_callable=check_cache_health,
+            )
+
+            evaluate = BranchPythonOperator(
+                task_id='evaluate_health',
+                python_callable=evaluate_health,
+            )
+
+            all_healthy = EmptyOperator(
+                task_id='all_healthy',
+            )
+
+            alert = PythonOperator(
+                task_id='send_alert',
+                python_callable=send_alert,
+            )
+
+            complete = EmptyOperator(
+                task_id='complete',
+                trigger_rule='none_failed_min_one_success',
+            )
+
+            [check_api, check_database, check_cache] >> evaluate
+            evaluate >> [all_healthy, alert] >> complete
+
+  # DAG 3: Report Generator - Daily reports
+  - name: dag-report-generator
+    namespace: airflow
+    file_content:
+      report_generator.py: |
+        """
+        Report Generator DAG
+        Generates daily business reports and stores them
+        """
+        from datetime import datetime, timedelta
+        from airflow import DAG
+        from airflow.operators.python import PythonOperator
+        from airflow.operators.bash import BashOperator
+        from airflow.utils.task_group import TaskGroup
+
+        default_args = {
+            'owner': 'analytics-team',
+            'depends_on_past': False,
+            'email_on_failure': False,
+            'retries': 3,
+            'retry_delay': timedelta(minutes=10),
+        }
+
+        def fetch_sales_data(**context):
+            """Fetch sales metrics"""
+            print("Fetching sales data...")
+            data = {
+                'total_sales': 150000,
+                'transactions': 1250,
+                'avg_order_value': 120,
+                'date': context['ds']
+            }
+            context['ti'].xcom_push(key='sales_data', value=data)
+            return data
+
+        def fetch_user_data(**context):
+            """Fetch user activity metrics"""
+            print("Fetching user activity data...")
+            data = {
+                'active_users': 5420,
+                'new_signups': 145,
+                'churn_rate': 2.3,
+                'date': context['ds']
+            }
+            context['ti'].xcom_push(key='user_data', value=data)
+            return data
+
+        def fetch_performance_data(**context):
+            """Fetch system performance metrics"""
+            print("Fetching performance data...")
+            data = {
+                'avg_response_time_ms': 145,
+                'error_rate': 0.02,
+                'uptime_percent': 99.95,
+                'date': context['ds']
+            }
+            context['ti'].xcom_push(key='performance_data', value=data)
+            return data
+
+        def generate_report(**context):
+            """Compile all data into report"""
+            ti = context['ti']
+            sales = ti.xcom_pull(key='sales_data', task_ids='data_collection.fetch_sales')
+            users = ti.xcom_pull(key='user_data', task_ids='data_collection.fetch_users')
+            perf = ti.xcom_pull(key='performance_data', task_ids='data_collection.fetch_performance')
+
+            report = {
+                'report_date': context['ds'],
+                'generated_at': str(datetime.now()),
+                'sales_summary': sales,
+                'user_summary': users,
+                'performance_summary': perf,
+            }
+
+            print("=" * 50)
+            print(f"DAILY REPORT - {context['ds']}")
+            print("=" * 50)
+            print(f"Sales: ${sales['total_sales']:,} ({sales['transactions']} transactions)")
+            print(f"Users: {users['active_users']:,} active, {users['new_signups']} new")
+            print(f"Performance: {perf['avg_response_time_ms']}ms avg, {perf['uptime_percent']}% uptime")
+            print("=" * 50)
+
+            context['ti'].xcom_push(key='report', value=report)
+            return report
+
+        def store_report(**context):
+            """Store report to persistent storage"""
+            ti = context['ti']
+            report = ti.xcom_pull(key='report', task_ids='generate_report')
+            print(f"Storing report for {report['report_date']}...")
+            # In production, this would save to S3, database, etc.
+            return {"status": "stored", "location": f"/reports/{report['report_date']}.json"}
+
+        def notify_stakeholders(**context):
+            """Send notification about report availability"""
+            print("Notifying stakeholders that daily report is ready...")
+            # In production, this would send email/Slack notification
+            return {"notified": True, "channels": ["email", "slack"]}
+
+        with DAG(
+            'report_generator',
+            default_args=default_args,
+            description='Daily business report generator',
+            schedule_interval='0 6 * * *',  # Every day at 6 AM
+            start_date=datetime(2024, 1, 1),
+            catchup=False,
+            tags=['reports', 'analytics', 'daily'],
+        ) as dag:
+
+            start = BashOperator(
+                task_id='start',
+                bash_command='echo "Starting daily report generation for {{ ds }}"',
+            )
+
+            with TaskGroup('data_collection') as data_collection:
+                fetch_sales = PythonOperator(
+                    task_id='fetch_sales',
+                    python_callable=fetch_sales_data,
+                )
+
+                fetch_users = PythonOperator(
+                    task_id='fetch_users',
+                    python_callable=fetch_user_data,
+                )
+
+                fetch_performance = PythonOperator(
+                    task_id='fetch_performance',
+                    python_callable=fetch_performance_data,
+                )
+
+            generate = PythonOperator(
+                task_id='generate_report',
+                python_callable=generate_report,
+            )
+
+            store = PythonOperator(
+                task_id='store_report',
+                python_callable=store_report,
+            )
+
+            notify = PythonOperator(
+                task_id='notify_stakeholders',
+                python_callable=notify_stakeholders,
+            )
+
+            end = BashOperator(
+                task_id='end',
+                bash_command='echo "Daily report generation completed at $(date)"',
+            )
+
+            start >> data_collection >> generate >> store >> notify >> end
+
+# ArgoCD application overrides
+application:
+  metadata:
+    annotations:
+      description: "Airflow DAGs - 3 example workflows (ETL, Health Check, Reports)"
+  spec:
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+

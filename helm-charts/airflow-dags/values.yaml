@@ -1,0 +1,17 @@
+# Default values for airflow-dags
+# Deploys Airflow DAGs as ConfigMaps that can be mounted by Airflow
+
+# Namespace where Airflow is deployed
+airflowNamespace: airflow
+
+# DAG ConfigMaps
+configmaps: []
+#   - name: my-dag
+#     namespace: airflow
+#     file_content:
+#       my_dag.py: |
+#         from airflow import DAG
+#         ...
+
+# Optional: Additional resources for DAG-related secrets
+secrets: []

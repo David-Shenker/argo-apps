@@ -1,0 +1,12 @@
+apiVersion: v2
+name: airflow-dags
+description: Helm chart for deploying Airflow DAGs as ConfigMaps
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+dependencies:
+  - name: global-templates
+    version: "1.12.*"
+    repository: "file://../global-templates"
+    import-values:
+      - defaults

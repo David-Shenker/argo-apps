@@ -1,0 +1,115 @@
+# Default values for airflow-operator
+# This deploys Apache Airflow using the community airflow-helm chart
+
+airflow:
+  # Airflow configuration
+  airflow:
+    # Use CeleryKubernetesExecutor for hybrid DAG execution
+    executor: CeleryKubernetesExecutor
+
+    # Airflow version
+    image:
+      repository: apache/airflow
+      tag: 2.8.1-python3.11
+      pullPolicy: IfNotPresent
+
+    # Airflow configuration overrides
+    config:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "True"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "False"
+      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
+
+  # Web server configuration
+  web:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  # Scheduler configuration
+  scheduler:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  # Worker configuration (for Celery executor)
+  workers:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  # Triggerer for deferrable operators
+  triggerer:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  # Flower monitoring (optional)
+  flower:
+    enabled: false
+
+  # PostgreSQL database
+  postgresql:
+    enabled: true
+    auth:
+      postgresPassword: airflow
+      username: airflow
+      password: airflow
+      database: airflow
+    primary:
+      persistence:
+        enabled: true
+        size: 5Gi
+
+  # Redis for Celery broker
+  redis:
+    enabled: true
+    architecture: standalone
+    auth:
+      enabled: false
+
+  # DAG sync configuration
+  dags:
+    # Git-sync for DAGs (disabled by default, enable for GitOps)
+    gitSync:
+      enabled: false
+      repo: ""
+      branch: "main"
+      subPath: "dags"
+      syncWait: 60
+
+  # Logs configuration
+  logs:
+    persistence:
+      enabled: false
+
+  # Service account
+  serviceAccount:
+    create: true
+    name: airflow
+
+  # RBAC for KubernetesExecutor
+  rbac:
+    create: true

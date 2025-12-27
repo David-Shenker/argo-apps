@@ -1,0 +1,143 @@
+# Airflow Operator deployment for dev cluster
+# Deployed via infra ApplicationSet
+
+airflow:
+  # Airflow core configuration
+  airflow:
+    executor: CeleryKubernetesExecutor
+
+    image:
+      repository: apache/airflow
+      tag: 2.8.1-python3.11
+      pullPolicy: IfNotPresent
+
+    # Development-friendly configuration
+    config:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "True"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
+      AIRFLOW__KUBERNETES__DELETE_WORKER_PODS: "True"
+      AIRFLOW__KUBERNETES__DELETE_WORKER_PODS_ON_FAILURE: "False"
+
+    # Default admin user
+    users:
+      - username: admin
+        password: admin
+        role: Admin
+        email: admin@example.com
+        firstName: Admin
+        lastName: User
+
+  # Web UI
+  web:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+    service:
+      type: ClusterIP
+      port: 8080
+
+  # Scheduler
+  scheduler:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+
+  # Celery workers
+  workers:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+
+  # Triggerer for deferrable operators
+  triggerer:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 25m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+
+  # Database - PostgreSQL
+  postgresql:
+    enabled: true
+    auth:
+      postgresPassword: airflow-dev
+      username: airflow
+      password: airflow-dev
+      database: airflow
+    primary:
+      persistence:
+        enabled: true
+        size: 2Gi
+        storageClass: ""
+
+  # Redis for Celery
+  redis:
+    enabled: true
+    architecture: standalone
+    auth:
+      enabled: false
+    master:
+      persistence:
+        enabled: false
+
+  # DAG sync - Git sync enabled for GitOps
+  dags:
+    gitSync:
+      enabled: true
+      repo: "https://github.com/David-Shenker/argo-apps.git"
+      branch: "dev"
+      subPath: "dags"
+      syncWait: 60
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+
+  # Logs
+  logs:
+    persistence:
+      enabled: false
+
+  # Flower disabled for dev
+  flower:
+    enabled: false
+
+# ArgoCD application overrides
+application:
+  metadata:
+    annotations:
+      argocd.argoproj.io/sync-wave: "-5"
+      description: "Apache Airflow Operator - DAG orchestration platform"
+  spec:
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true

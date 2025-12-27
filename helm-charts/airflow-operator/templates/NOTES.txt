@@ -1,0 +1,15 @@
+Airflow Operator has been deployed!
+
+To access the Airflow Web UI:
+
+1. Get the application URL by running:
+   kubectl port-forward svc/{{ .Release.Name }}-web 8080:8080 -n {{ .Release.Namespace }}
+
+2. Open your browser at http://localhost:8080
+
+Default credentials (if using default config):
+   Username: admin
+   Password: admin
+
+For more information, visit: https://airflow-helm.github.io/charts/
+
