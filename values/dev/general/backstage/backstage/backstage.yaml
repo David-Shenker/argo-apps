@@ -17,15 +17,6 @@ backstage:
         configMapRef: backstage-app-config
 
     extraEnvVars:
-      # PostgreSQL connection (required for catalog)
-      - name: POSTGRES_HOST
-        value: "backstage-postgresql"
-      - name: POSTGRES_PORT
-        value: "5432"
-      - name: POSTGRES_USER
-        value: "backstage"
-      - name: POSTGRES_PASSWORD
-        value: "backstage-dev"
       # ArgoCD integration
       - name: ARGOCD_AUTH_TOKEN
         valueFrom:
