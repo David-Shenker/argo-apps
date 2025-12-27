@@ -155,11 +155,11 @@ Generates the list of value files based on configuration
     {{- end }}
   {{- end }}
 
-  {{/* Cluster base values */}}
+  {{/* Cluster global values (env-specific) */}}
   {{- if $prefix }}
-- {{ printf "%s/%s/%s/base/%s.yaml" $prefix $valuesDir $cluster $chartName | quote }}
+- {{ printf "%s/%s/%s/global/%s.yaml" $prefix $valuesDir $cluster $chartName | quote }}
   {{- else }}
-- {{ printf "/%s/%s/base/%s.yaml" $valuesDir $cluster $chartName | quote }}
+- {{ printf "/%s/%s/global/%s.yaml" $valuesDir $cluster $chartName | quote }}
   {{- end }}
 
   {{/* App-specific values */}}

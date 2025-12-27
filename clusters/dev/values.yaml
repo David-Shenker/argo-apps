@@ -41,4 +41,4 @@ appofapps:
       disableFinalizers: true # Failsafe to prevent deletion of everything
       valueFiles:
         - "{{ .sourcePath }}/appsets.yaml"
-        - "{{ .valuesDir }}/{{ .cluster }}/base/{{ .chartName }}.yaml"
+        - "{{ .valuesDir }}/{{ .cluster }}/global/{{ .chartName }}.yaml"

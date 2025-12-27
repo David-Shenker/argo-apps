@@ -1,7 +1,8 @@
 # =============================================================================
-# Dev Cluster Base Values for example-app
+# Dev Environment Global Values for example-app
 # =============================================================================
-# These values apply to ALL example-app instances in the dev cluster.
+# These values apply to ALL example-app instances in the dev environment.
+# Hierarchy: values/global/ -> values/dev/global/ -> values/dev/<appset>/<ns>/<chart>/
 # =============================================================================
 
 # Dev-specific defaults - lower resources for development

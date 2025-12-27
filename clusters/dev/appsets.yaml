@@ -7,7 +7,7 @@ appSets:
     enabled: true
 
   monitoring:
-    enabled: true
+    enabled: false
 
   general:
     enabled: true

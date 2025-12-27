@@ -1,6 +1,8 @@
 # =============================================================================
-# Dev Cluster Base Values for ArgoCD
+# Dev Environment Global Values for ArgoCD
 # =============================================================================
+# These values apply to ALL ArgoCD instances in the dev environment.
+# Hierarchy: values/global/ -> values/dev/global/ -> values/dev/<appset>/<ns>/<chart>/
 
 argo-cd:
   # Global settings for dev
