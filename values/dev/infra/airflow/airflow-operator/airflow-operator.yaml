@@ -1,10 +1,11 @@
 # Airflow Operator deployment for dev cluster
-# Deployed via infra ApplicationSet
+# MINIMAL config for low-memory environments (Kind/local)
 
 airflow:
   # Airflow core configuration
   airflow:
-    executor: CeleryKubernetesExecutor
+    # LocalExecutor = no workers, no Redis needed (saves ~500MB+)
+    executor: LocalExecutor
 
     image:
       repository: apache/airflow
@@ -16,9 +17,7 @@ airflow:
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "True"
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
-      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
-      AIRFLOW__KUBERNETES__DELETE_WORKER_PODS: "True"
-      AIRFLOW__KUBERNETES__DELETE_WORKER_PODS_ON_FAILURE: "False"
+      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "60"
 
     # Default admin user
     users:
@@ -29,56 +28,40 @@ airflow:
         firstName: Admin
         lastName: User
 
-  # Web UI
+  # Web UI - minimal resources
   web:
     replicas: 1
     resources:
       requests:
-        cpu: 25m
+        cpu: 10m
         memory: 128Mi
       limits:
-        cpu: 200m
-        memory: 384Mi
+        cpu: 500m
+        memory: 512Mi
     service:
       type: ClusterIP
       port: 8080
 
-  # Scheduler
+  # Scheduler - minimal resources
   scheduler:
     replicas: 1
     resources:
       requests:
-        cpu: 25m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 384Mi
-
-  # Celery workers
-  workers:
-    enabled: true
-    replicas: 1
-    resources:
-      requests:
-        cpu: 25m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 384Mi
-
-  # Triggerer for deferrable operators
-  triggerer:
-    enabled: true
-    replicas: 1
-    resources:
-      requests:
         cpu: 10m
-        memory: 64Mi
+        memory: 128Mi
       limits:
-        cpu: 100m
-        memory: 192Mi
+        cpu: 500m
+        memory: 512Mi
 
-  # Database - PostgreSQL
+  # Celery workers - DISABLED for LocalExecutor
+  workers:
+    enabled: false
+
+  # Triggerer - DISABLED to save resources
+  triggerer:
+    enabled: false
+
+  # Database - PostgreSQL with minimal resources
   postgresql:
     enabled: true
     auth:
@@ -89,52 +72,29 @@ airflow:
     primary:
       resources:
         requests:
-          cpu: 25m
-          memory: 128Mi
+          cpu: 10m
+          memory: 64Mi
         limits:
           cpu: 200m
           memory: 256Mi
       persistence:
-        enabled: true
-        size: 1Gi
-        storageClass: ""
+        enabled: false # Disable persistence for dev
 
-  # Redis for Celery
+  # Redis - DISABLED (not needed for LocalExecutor)
   redis:
-    enabled: true
-    architecture: standalone
-    auth:
-      enabled: false
-    image:
-      registry: docker.io
-      repository: bitnamilegacy/redis
-      tag: 6.2.14-debian-12-r17
-    master:
-      persistence:
-        enabled: false
+    enabled: false
 
-  # DAG sync - Git sync enabled for GitOps
+  # DAG sync - disabled, mount DAGs directly or use configmaps
   dags:
     gitSync:
-      enabled: true
-      repo: "https://github.com/David-Shenker/argo-apps.git"
-      branch: "dev"
-      subPath: "dags"
-      syncWait: 60
-      resources:
-        requests:
-          cpu: 10m
-          memory: 32Mi
-        limits:
-          cpu: 50m
-          memory: 64Mi
+      enabled: false
 
   # Logs
   logs:
     persistence:
       enabled: false
 
-  # Flower disabled for dev
+  # Flower disabled
   flower:
     enabled: false
 
@@ -143,7 +103,7 @@ application:
   metadata:
     annotations:
       argocd.argoproj.io/sync-wave: "-5"
-      description: "Apache Airflow Operator - DAG orchestration platform"
+      description: "Apache Airflow (minimal) - DAG orchestration platform"
   spec:
     syncPolicy:
       automated:
