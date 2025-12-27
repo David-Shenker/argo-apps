@@ -1,0 +1,23 @@
+# Kind cluster configuration with increased resources
+# Usage: KIND_CONFIG=scripts/kind-config.yaml ./scripts/init-cluster.sh -kab
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            # Increase memory available to pods
+            system-reserved: memory=512Mi
+            kube-reserved: memory=512Mi
+    extraPortMappings:
+      # ArgoCD UI
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP
+      # Airflow Web UI
+      - containerPort: 30088
+        hostPort: 8088
+        protocol: TCP

@@ -34,11 +34,11 @@ airflow:
     replicas: 1
     resources:
       requests:
-        cpu: 50m
-        memory: 256Mi
+        cpu: 25m
+        memory: 128Mi
       limits:
-        cpu: 300m
-        memory: 512Mi
+        cpu: 200m
+        memory: 384Mi
     service:
       type: ClusterIP
       port: 8080
@@ -48,11 +48,11 @@ airflow:
     replicas: 1
     resources:
       requests:
-        cpu: 50m
-        memory: 256Mi
+        cpu: 25m
+        memory: 128Mi
       limits:
-        cpu: 300m
-        memory: 512Mi
+        cpu: 200m
+        memory: 384Mi
 
   # Celery workers
   workers:
@@ -60,11 +60,11 @@ airflow:
     replicas: 1
     resources:
       requests:
-        cpu: 50m
-        memory: 256Mi
+        cpu: 25m
+        memory: 128Mi
       limits:
-        cpu: 300m
-        memory: 512Mi
+        cpu: 200m
+        memory: 384Mi
 
   # Triggerer for deferrable operators
   triggerer:
@@ -72,11 +72,11 @@ airflow:
     replicas: 1
     resources:
       requests:
-        cpu: 25m
-        memory: 128Mi
+        cpu: 10m
+        memory: 64Mi
       limits:
         cpu: 100m
-        memory: 256Mi
+        memory: 192Mi
 
   # Database - PostgreSQL
   postgresql:
@@ -87,9 +87,16 @@ airflow:
       password: airflow-dev
       database: airflow
     primary:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
       persistence:
         enabled: true
-        size: 2Gi
+        size: 1Gi
         storageClass: ""
 
   # Redis for Celery
