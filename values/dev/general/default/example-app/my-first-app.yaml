@@ -1,20 +1,3 @@
-# =============================================================================
-# My First App - Example Application Deployment
-# =============================================================================
-# This file will be discovered by the "infra" ApplicationSet and
-# automatically create an ArgoCD Application that deploys example-app
-# to the "default" namespace.
-#
-# Path breakdown:
-#   values/dev/infra/default/example-app/my-first-app.yaml
-#          │    │     │       │           └── Release name
-#          │    │     │       └── Chart name (matches helm-charts/example-app)
-#          │    │     └── Target namespace
-#          │    └── ApplicationSet name (must be enabled in appsets.yaml)
-#          └── Cluster name
-# =============================================================================
-
-# Override deployment settings
 deployments:
   - name: example-app
     namespace: default
@@ -58,7 +41,6 @@ deployments:
         configMap:
           name: example-app-html
 
-# Service configuration
 services:
   - name: example-app
     namespace: default
@@ -69,15 +51,15 @@ services:
         targetPort: 80
         protocol: TCP
 
-# ConfigMap with custom message
 configmaps:
   - name: example-app-html
     namespace: default
     file_content:
       index.html: |
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
             <title>My First App</title>
             <style>
                 body {
@@ -104,8 +86,8 @@ configmaps:
         </head>
         <body>
             <div class="container">
-                <h1>🎉 Welcome to My First App!</h1>
-                <p>Successfully deployed via ArgoCD GitOps</p>
+                <h1>Welcome to My First App!</h1>
+                <p>Deployed via ArgoCD GitOps</p>
                 <div class="info">
                     Cluster: dev | Namespace: default
                 </div>
@@ -113,9 +95,6 @@ configmaps:
         </body>
         </html>
 
-# =============================================================================
-# ArgoCD Application Overrides (Optional)
-# =============================================================================
 application:
   metadata:
     annotations:

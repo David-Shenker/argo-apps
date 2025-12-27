@@ -1,0 +1,17 @@
+# Organization defaults - all clusters, all apps
+
+common_defaults:
+  labels:
+    managed-by: argocd
+    organization: my-org
+
+defaultResources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+defaultReplicas: 1
+defaultImagePullPolicy: IfNotPresent

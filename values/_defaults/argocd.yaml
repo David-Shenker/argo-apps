@@ -1,11 +1,6 @@
-# =============================================================================
-# Global Values for ArgoCD
-# =============================================================================
-# These values apply to ALL clusters.
-# =============================================================================
+# Defaults for ArgoCD across all environments
 
 argo-cd:
-  # Default resource allocations
   controller:
     resources:
       requests:
@@ -33,15 +28,11 @@ argo-cd:
         cpu: 200m
         memory: 256Mi
 
-  # Enable ApplicationSet by default
   applicationSet:
     enabled: true
 
-  # Enable notifications by default
   notifications:
     enabled: true
 
-  # Redis enabled by default
   redis:
     enabled: true
-

@@ -1,199 +1,146 @@
-{{/*
-=============================================================================
-Application Template
-Generates the metadata and spec for an ArgoCD Application
-=============================================================================
-*/}}
-
 {{- define "chart-library.application" -}}
+{{- $defaults := .Values.defaults | default dict -}}
+{{- $paths := .Values.paths | default dict -}}
+{{- $repo := .Values.repo | default dict -}}
+{{- $chart := .Values.chart | default dict -}}
+{{- $cluster := include "chart-library.clusterName" . -}}
+{{- $cloud := include "chart-library.cloud" . -}}
+
+{{- range .applications }}
+{{- if not .disabled }}
+{{- $app := . -}}
+{{- $multiSource := eq (toString (.multiSource | default $defaults.multiSource | default false)) "true" -}}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
 metadata:
-  name: {{ required "appName is required" .appName | quote }}
-  namespace: {{ .argocdNamespace | default "argocd" }}
+  name: {{ required "name is required" .name | quote }}
+  namespace: {{ .argocdNamespace | default $defaults.argocdNamespace | default "argocd" }}
   {{- if not .disableFinalizers }}
-  finalizers:
-    {{- toYaml (.finalizers | default (list "resources-finalizer.argocd.argoproj.io")) | nindent 4 }}
+  finalizers: {{ toYaml (.finalizers | default (list "resources-finalizer.argocd.argoproj.io")) | nindent 4 }}
   {{- end }}
   {{- with .labels }}
-  labels:
-    {{- toYaml . | nindent 4 }}
+  labels: {{ toYaml . | nindent 4 }}
   {{- end }}
   {{- with .annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  project: {{ .project | default $defaults.project | default "default" | quote }}
+  destination:
+    server: {{ .server | default $defaults.server | default "https://kubernetes.default.svc" | quote }}
+    namespace: {{ required "namespace is required" .namespace | quote }}
+  {{- if $multiSource }}
+  sources:
+    - repoURL: {{ .chartRepoURL | default $chart.repoURL | required "chartRepoURL is required for multi-source" | quote }}
+      chart: {{ .chartName | quote }}
+      targetRevision: {{ .chartVersion | default $chart.version | default "1.0.0" | quote }}
+      helm:
+        {{- with .releaseName }}
+        releaseName: {{ . | quote }}
+        {{- end }}
+        ignoreMissingValueFiles: {{ .ignoreMissingValueFiles | default $defaults.ignoreMissingValueFiles | default true }}
+        valueFiles: {{ include "chart-library.valueFiles" (dict "app" (merge $app (dict "cluster" $cluster "cloud" $cloud "valuesDir" ($paths.values | default "values"))) "ctx" $ "prefix" "$values") | nindent 10 }}
+        {{- with .helmValues }}
+        values: |- {{ toYaml . | nindent 10 }}
+        {{- end }}
+    - repoURL: {{ .repoURL | default $repo.url | required "repoURL is required" | quote }}
+      targetRevision: {{ .targetRevision | default $repo.revision | default "HEAD" | quote }}
+      {{- if .recurseSubmodules }}
+      directory:
+        recurse: true
+      {{- end }}
+      ref: values
+  {{- else }}
+  source:
+    repoURL: {{ .repoURL | default $repo.url | required "repoURL is required" | quote }}
+    path: {{ required "path is required for single-source" .path | quote }}
+    targetRevision: {{ .targetRevision | default $repo.revision | default "HEAD" | quote }}
+    {{- if .recurseSubmodules }}
+    directory:
+      recurse: true
+    {{- end }}
+    helm:
+      {{- with .releaseName }}
+      releaseName: {{ . | quote }}
+      {{- end }}
+      ignoreMissingValueFiles: {{ .ignoreMissingValueFiles | default $defaults.ignoreMissingValueFiles | default true }}
+      valueFiles: {{ include "chart-library.valueFiles" (dict "app" (merge $app (dict "cluster" $cluster "cloud" $cloud "valuesDir" ($paths.values | default "values"))) "ctx" $) | nindent 8 }}
+      {{- with .helmValues }}
+      values: |- {{ toYaml . | nindent 8 }}
+      {{- end }}
+  {{- end }}
+  syncPolicy: {{ include "chart-library.syncPolicy" (dict "syncPolicy" .syncPolicy "defaults" $defaults) | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "chart-library.application.spec" -}}
+{{- $multiSource := eq (toString (.multiSource | default false)) "true" -}}
+metadata:
+  name: {{ required "name is required" .name | quote }}
+  namespace: {{ .argocdNamespace | default "argocd" }}
+  {{- if not .disableFinalizers }}
+  finalizers: {{ toYaml (.finalizers | default (list "resources-finalizer.argocd.argoproj.io")) | nindent 4 }}
+  {{- end }}
+  {{- with .labels }}
+  labels: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
 spec:
   project: {{ .project | default "default" | quote }}
   destination:
     server: {{ .server | default "https://kubernetes.default.svc" | quote }}
-    namespace: {{ .destinationNamespace | quote }}
-
-  {{- if eq (toString .multiSource) "true" }}
-  {{- include "chart-library.application.multiSource" . | nindent 2 }}
+    namespace: {{ .namespace | quote }}
+  {{- if $multiSource }}
+  sources:
+    - repoURL: {{ required "chartRepoURL is required for multi-source" .chartRepoURL | quote }}
+      chart: {{ .chartName | quote }}
+      targetRevision: {{ .chartVersion | default "1.0.0" | quote }}
+      helm:
+        {{- with .releaseName }}
+        releaseName: {{ . | quote }}
+        {{- end }}
+        ignoreMissingValueFiles: {{ .ignoreMissingValueFiles | default true }}
+        valueFiles: {{ include "chart-library.valueFiles" (dict "app" . "ctx" .ctx "prefix" "$values") | nindent 10 }}
+        {{- with .helmValues }}
+        values: |- {{ toYaml . | nindent 10 }}
+        {{- end }}
+    - repoURL: {{ required "repoURL is required" .repoURL | quote }}
+      targetRevision: {{ .targetRevision | default "HEAD" | quote }}
+      {{- if .recurseSubmodules }}
+      directory:
+        recurse: true
+      {{- end }}
+      ref: values
   {{- else }}
-  {{- include "chart-library.application.singleSource" . | nindent 2 }}
-  {{- end }}
-
-  syncPolicy:
-    {{- include "chart-library.application.syncPolicy" . | nindent 4 }}
-{{- end }}
-
-
-{{/*
-=============================================================================
-Multi-Source Configuration
-=============================================================================
-*/}}
-{{- define "chart-library.application.multiSource" -}}
-sources:
-  # Chart source (from chart repository)
-  - repoURL: {{ required "chartRepoURL is required for multi-source" .chartRepoURL | quote }}
-    chart: {{ .chartName | quote }}
-    targetRevision: {{ required "chartVersion is required" .chartVersion | quote }}
-    helm:
-      {{- with .chartReleaseName }}
-      releaseName: {{ . | quote }}
-      {{- end }}
-      ignoreMissingValueFiles: {{ .ignoreMissingValueFiles | default true }}
-      valueFiles:
-        {{- include "chart-library.application.valueFiles" (dict "ctx" . "prefix" "$values") | nindent 8 }}
-      {{- with .helmValues }}
-      values: |-
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-
-  # Values source (from Git)
-  - repoURL: {{ required "sourceRepoURL is required" .sourceRepoURL | quote }}
-    targetRevision: {{ required "sourceTargetRevision is required" .sourceTargetRevision | quote }}
+  source:
+    repoURL: {{ required "repoURL is required" .repoURL | quote }}
+    path: {{ required "path is required for single-source" .path | quote }}
+    targetRevision: {{ .targetRevision | default "HEAD" | quote }}
     {{- if .recurseSubmodules }}
     directory:
       recurse: true
     {{- end }}
-    ref: values
-{{- end }}
-
-
-{{/*
-=============================================================================
-Single-Source Configuration
-=============================================================================
-*/}}
-{{- define "chart-library.application.singleSource" -}}
-source:
-  repoURL: {{ required "sourceRepoURL is required" .sourceRepoURL | quote }}
-  path: {{ required "sourcePath is required" .sourcePath | quote }}
-  targetRevision: {{ required "sourceTargetRevision is required" .sourceTargetRevision | quote }}
-  {{- if .recurseSubmodules }}
-  directory:
-    recurse: true
-  {{- end }}
-  helm:
-    {{- with .chartReleaseName }}
-    releaseName: {{ . | quote }}
-    {{- end }}
-    ignoreMissingValueFiles: {{ .ignoreMissingValueFiles | default true }}
-    valueFiles:
-      {{- include "chart-library.application.valueFiles" (dict "ctx" .) | nindent 6 }}
-    {{- with .helmValues }}
-    values: |-
-      {{- toYaml . | nindent 6 }}
-    {{- end }}
-{{- end }}
-
-
-{{/*
-=============================================================================
-Value Files Generator
-Generates the list of value files based on configuration
-=============================================================================
-*/}}
-{{- define "chart-library.application.valueFiles" -}}
-{{- $ctx := .ctx -}}
-{{- $prefix := .prefix | default "" -}}
-{{- $valueFiles := $ctx.valueFiles | default list -}}
-
-{{- if $valueFiles -}}
-  {{- range $valueFiles -}}
-    {{- $path := tpl . $ctx | replace "\\" "" -}}
-    {{- /* Handle paths that already start with / */ -}}
-    {{- if hasPrefix "/" $path }}
-      {{- if $prefix }}
-- {{ printf "%s%s" $prefix $path | quote }}
-      {{- else }}
-- {{ $path | quote }}
+    helm:
+      {{- with .releaseName }}
+      releaseName: {{ . | quote }}
       {{- end }}
-    {{- else }}
-      {{- if $prefix }}
-- {{ printf "%s/%s" $prefix $path | quote }}
-      {{- else }}
-- {{ printf "/%s" $path | quote }}
+      ignoreMissingValueFiles: {{ .ignoreMissingValueFiles | default true }}
+      valueFiles: {{ include "chart-library.valueFiles" (dict "app" . "ctx" .ctx) | nindent 8 }}
+      {{- with .helmValues }}
+      values: |- {{ toYaml . | nindent 8 }}
       {{- end }}
-    {{- end }}
-  {{- end -}}
-{{- else -}}
-  {{/* Default value files hierarchy */}}
-  {{- $valuesDir := $ctx.valuesDir | default "values" -}}
-  {{- $cluster := $ctx.cluster | default "" -}}
-  {{- $cloud := $ctx.cloud | default "" -}}
-  {{- $appSetName := $ctx.appSetName | default "" -}}
-  {{- $namespace := $ctx.destinationNamespace | default "" -}}
-  {{- $chartName := $ctx.chartName | default "" -}}
-  {{- $appReleaseName := $ctx.appReleaseName | default "" -}}
-
-  {{/* Global values */}}
-  {{- if $prefix }}
-- {{ printf "%s/%s/global/%s.yaml" $prefix $valuesDir $chartName | quote }}
-  {{- else }}
-- {{ printf "/%s/global/%s.yaml" $valuesDir $chartName | quote }}
   {{- end }}
-
-  {{/* Cloud-specific values (if cloud is set) */}}
-  {{- if $cloud }}
-    {{- if $prefix }}
-- {{ printf "%s/%s/%s/%s.yaml" $prefix $valuesDir $cloud $chartName | quote }}
-    {{- else }}
-- {{ printf "/%s/%s/%s.yaml" $valuesDir $cloud $chartName | quote }}
-    {{- end }}
-  {{- end }}
-
-  {{/* Cluster base values */}}
-  {{- if $prefix }}
-- {{ printf "%s/%s/%s/base/%s.yaml" $prefix $valuesDir $cluster $chartName | quote }}
-  {{- else }}
-- {{ printf "/%s/%s/base/%s.yaml" $valuesDir $cluster $chartName | quote }}
-  {{- end }}
-
-  {{/* App-specific values */}}
-  {{- if and $appSetName $namespace $appReleaseName }}
-    {{- if $prefix }}
-- {{ printf "%s/%s/%s/%s/%s/%s/%s.yaml" $prefix $valuesDir $cluster $appSetName $namespace $chartName $appReleaseName | quote }}
-    {{- else }}
-- {{ printf "/%s/%s/%s/%s/%s/%s.yaml" $valuesDir $cluster $appSetName $namespace $chartName $appReleaseName | quote }}
-    {{- end }}
-  {{- end }}
-{{- end -}}
+  syncPolicy: {{ include "chart-library.syncPolicy" (dict "syncPolicy" .syncPolicy "defaults" dict) | nindent 4 }}
 {{- end }}
 
-
-{{/*
-=============================================================================
-Sync Policy
-=============================================================================
-*/}}
 {{- define "chart-library.application.syncPolicy" -}}
-{{- $defaults := dict
-    "automated" (dict "prune" true "selfHeal" true)
-    "syncOptions" (list "FailOnSharedResource=true" "ApplyOutOfSyncOnly=true" "CreateNamespace=true")
--}}
-{{- $override := .syncPolicy | default dict -}}
-{{- toYaml (mustMergeOverwrite $defaults $override) -}}
+{{- include "chart-library.syncPolicy" . -}}
 {{- end }}
 
-
-{{/*
-=============================================================================
-Default Sync Policy (backwards compatibility alias)
-=============================================================================
-*/}}
 {{- define "chart-library.application.defaultSyncPolicy" -}}
-{{- include "chart-library.application.syncPolicy" . -}}
+{{- include "chart-library.syncPolicy" . -}}
 {{- end }}

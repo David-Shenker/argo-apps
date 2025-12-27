@@ -1,20 +1,5 @@
-# =============================================================================
-# Example: Application Values File
-# =============================================================================
-# This file should be placed in:
-#   values/<cluster>/<appset>/<namespace>/<chart>/<release>.yaml
-#
-# Example path:
-#   values/prod/infra/kube-system/metrics-server/metrics-server.yaml
-#
-# The ApplicationSet will automatically:
-#   1. Discover this file
-#   2. Create an ArgoCD Application
-#   3. Deploy the chart with these values
-# =============================================================================
-
-# Chart-specific values (passed to the Helm chart)
-# These are the values you would normally put in a values.yaml file
+# Place at: values/<cluster>/<appset>/<namespace>/<chart>/<release>.yaml
+# Example: values/prod/infra/kube-system/metrics-server/metrics-server.yaml
 
 replicaCount: 2
 
@@ -43,22 +28,13 @@ podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "8080"
 
-# =============================================================================
-# ArgoCD Application Overrides (Optional)
-# =============================================================================
-# Use the 'application' key to override ArgoCD Application settings.
-# This is merged into the Application spec via templatePatch.
-
+# ArgoCD Application overrides (optional)
 application:
   metadata:
     annotations:
-      # Notification on sync status
       notifications.argoproj.io/subscribe.on-sync-succeeded.slack: deployments
       notifications.argoproj.io/subscribe.on-sync-failed.slack: alerts
-      # Custom annotations
-      description: "Kubernetes Metrics Server"
   spec:
-    # Override sync options
     syncPolicy:
       automated:
         prune: true
@@ -66,10 +42,8 @@ application:
       syncOptions:
         - CreateNamespace=true
         - ServerSideApply=true
-    # Ignore differences in certain fields
     ignoreDifferences:
       - group: apps
         kind: Deployment
         jsonPointers:
           - /spec/replicas
-

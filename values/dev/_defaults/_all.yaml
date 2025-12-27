@@ -1,0 +1,16 @@
+# Dev environment defaults - all apps
+
+common_defaults:
+  labels:
+    environment: dev
+
+defaultResources:
+  requests:
+    cpu: 5m
+    memory: 16Mi
+  limits:
+    cpu: 50m
+    memory: 64Mi
+
+defaultReplicas: 1
+defaultImagePullPolicy: Always

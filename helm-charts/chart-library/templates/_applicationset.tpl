@@ -1,120 +1,53 @@
-{{/*
-=============================================================================
-ApplicationSet Template
-Generates ArgoCD ApplicationSet resources with configurable paths
-=============================================================================
-*/}}
-
 {{- define "chart-library.applicationset" -}}
-{{- range $appSetKey, $appSetSpec := .Values.appSets }}
-{{- if $appSetSpec.enabled }}
-
-{{- /* Normalize appSet name */ -}}
-{{- $appSetName := include "chart-library.normalizeName" $appSetKey -}}
-{{- $appSetSpec := coalesce $appSetSpec dict -}}
-
-{{- /* Get configuration from values with safe access */ -}}
-{{- $paths := $.Values.paths | default dict -}}
+{{- $defaults := .Values.defaults | default dict -}}
+{{- $paths := .Values.paths | default dict -}}
+{{- $repo := .Values.repo | default dict -}}
+{{- $chart := .Values.chart | default dict -}}
+{{- $generator := .Values.generator | default dict -}}
+{{- $segments := $generator.segments | default dict -}}
+{{- $cluster := include "chart-library.clusterName" . -}}
+{{- $cloud := include "chart-library.cloud" . -}}
 {{- $valuesDir := $paths.values | default "values" -}}
 {{- $chartsDir := $paths.charts | default "helm-charts" -}}
-{{- $clusterConfig := $.Values.cluster | default dict -}}
-{{- $cluster := "" -}}
-{{- if kindIs "string" $.Values.cluster -}}
-{{- $cluster = $.Values.cluster -}}
-{{- else -}}
-{{- $cluster = $clusterConfig.name | default "" -}}
-{{- end -}}
-{{- $cloud := $clusterConfig.cloud | default "" -}}
 
-{{- /* Repository settings with safe access */ -}}
-{{- $repoConfig := $.Values.repo | default dict -}}
-{{- $repoURL := $appSetSpec.repoURL | default $repoConfig.url | required "repo.url is required" -}}
-{{- $revision := $appSetSpec.revision | default $repoConfig.revision | default "HEAD" -}}
-
-{{- /* Generator path configuration with safe access */ -}}
-{{- $generatorConfig := $.Values.generator | default dict -}}
-{{- $segmentsConfig := $generatorConfig.segments | default dict -}}
-{{- $segmentNamespace := $segmentsConfig.namespace | default 3 -}}
-{{- $segmentChartName := $segmentsConfig.chartName | default 4 -}}
-
-{{- /* Build the generator path pattern */ -}}
-{{- $pathPattern := $appSetSpec.pathPattern | default (printf "%s/%s/%s/*/*/*.yaml" $valuesDir $cluster $appSetName) -}}
-
-{{- /* Defaults with safe access */ -}}
-{{- $defaultsConfig := $.Values.defaults | default dict -}}
-
-{{- /* Determine if multi-source (handle explicit false) */ -}}
-{{- $multiSource := $defaultsConfig.multiSource | default false -}}
-{{- if hasKey $appSetSpec "multiSource" -}}
-{{- $multiSource = $appSetSpec.multiSource -}}
-{{- end -}}
-
-{{- /* Chart settings (only needed for multi-source) */ -}}
-{{- $chartConfig := $.Values.chart | default dict -}}
-{{- $chartRepoURL := "" -}}
-{{- $chartVersion := "1.0.0" -}}
-{{- if $multiSource -}}
-{{- $chartRepoURL = $appSetSpec.chartRepoURL | default $chartConfig.repoURL | required "chart.repoURL is required for multi-source" -}}
-{{- $chartVersion = $appSetSpec.chartVersion | default $chartConfig.version | default "1.0.0" -}}
-{{- end -}}
-
-{{- /* Preservation settings */ -}}
-{{- $preserveResourcesOnDeletion := $appSetSpec.preserveResourcesOnDeletion | default false -}}
-
-{{- /* Build dynamic Go template expressions for ApplicationSet */ -}}
-{{- $goTplNamespace := printf "{{ index .path.segments %d }}" (int $segmentNamespace) -}}
-{{- $goTplChartName := printf "{{ index .path.segments %d }}" (int $segmentChartName) -}}
-{{- $goTplFilename := "{{ trimSuffix \".yaml\" .path.filename }}" -}}
-
-{{- /* Build chart release name expression */ -}}
-{{- $goTplReleaseName := printf "{{ .chartReleaseName | default (ternary (trimSuffix \".yaml\" .path.filename) (printf \"%%s-%%s\" (index .path.segments %d) (trimSuffix \".yaml\" .path.filename)) (contains (index .path.segments %d) (trimSuffix \".yaml\" .path.filename))) }}" (int $segmentChartName) (int $segmentChartName) -}}
-
-{{- /* Build app name (includes namespace for uniqueness) */ -}}
-{{- $goTplAppName := printf "%s--%s" $goTplReleaseName $goTplNamespace -}}
-
-{{- /* Source path for single-source mode */ -}}
-{{- $sourcePath := printf "%s/%s" $chartsDir $goTplChartName -}}
-
-{{- /* Build template values for the application */ -}}
-{{- $appTemplateValues := dict
-    "appName" $goTplAppName
-    "appSetName" $appSetName
-    "appReleaseName" $goTplFilename
-    "labels" (dict "appset" $appSetName)
-    "destinationNamespace" $goTplNamespace
-    "disableFinalizers" (ternary true false $preserveResourcesOnDeletion)
-    "sourcePath" $sourcePath
-    "sourceTargetRevision" (printf "{{ .sourceTargetRevision | default \"%s\" }}" ($appSetSpec.sourceTargetRevision | default $revision))
-    "sourceRepoURL" $repoURL
-    "recurseSubmodules" ($appSetSpec.recurseSubmodules | default $defaultsConfig.recurseSubmodules | default false)
-    "chartName" $goTplChartName
-    "chartReleaseName" $goTplReleaseName
-    "valuesDir" $valuesDir
-    "chartRepoURL" $chartRepoURL
-    "chartVersion" (printf "{{ .chartVersion | default \"%s\" }}" $chartVersion)
+{{- range $appSetKey, $appSet := .Values.appSets }}
+{{- if $appSet.enabled }}
+{{- $appSetName := include "chart-library.normalizeName" $appSetKey -}}
+{{- $multiSource := $appSet.multiSource | default $defaults.multiSource | default false -}}
+{{- $repoURL := $appSet.repoURL | default $repo.url | required "repo.url is required" -}}
+{{- $revision := $appSet.revision | default $repo.revision | default "HEAD" -}}
+{{- $pathPattern := $appSet.pathPattern | default (printf "%s/%s/%s/*/*/*.yaml" $valuesDir $cluster $appSetName) -}}
+{{- $goTpl := include "chart-library.appSetGoTpl" (dict "segments" $segments) | fromYaml -}}
+{{- $valueFilesArgs := dict
+    "appSet" $appSet
+    "paths" $paths
     "cluster" $cluster
     "cloud" $cloud
-    "Template" $.Template
-    "multiSource" ($multiSource | toString)
-    "ignoreMissingValueFiles" ($appSetSpec.ignoreMissingValueFiles | default $defaultsConfig.ignoreMissingValueFiles | default true)
+    "appSetName" $appSetName
+    "goTpl" $goTpl
+    "ctx" $
 -}}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: {{ $appSetName | quote }}
-  namespace: {{ $defaultsConfig.argocdNamespace | default "argocd" | quote }}
-  {{- with $appSetSpec.labels }}
+  namespace: {{ $defaults.argocdNamespace | default "argocd" | quote }}
+  {{- if or $defaults.parentInstance $appSet.labels }}
   labels:
+    {{- with $defaults.parentInstance }}
+    argocd.argoproj.io/instance: {{ . | quote }}
+    {{- end }}
+    {{- with $appSet.labels }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
-  {{- with $appSetSpec.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
+  {{- with $appSet.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
 spec:
   syncPolicy:
-    preserveResourcesOnDeletion: {{ $preserveResourcesOnDeletion }}
+    preserveResourcesOnDeletion: {{ $appSet.preserveResourcesOnDeletion | default false }}
   goTemplate: true
   generators:
     - git:
@@ -124,27 +57,69 @@ spec:
           - path: {{ $pathPattern | quote }}
         {{- if $multiSource }}
         values:
-          chartVersion: {{ $chartVersion | quote }}
+          chartVersion: {{ $appSet.chartVersion | default $chart.version | default "1.0.0" | quote }}
         {{- end }}
-
   template:
-    {{- toYaml (mustMergeOverwrite dict (include "chart-library.application" $appTemplateValues | fromYaml) ($appSetSpec.template | default dict)) | nindent 4 }}
-
-  # Allow application values file to override template settings
+    metadata:
+      name: {{ $goTpl.appName | quote }}
+      namespace: {{ $defaults.argocdNamespace | default "argocd" | quote }}
+      {{- if not $appSet.preserveResourcesOnDeletion }}
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+      {{- end }}
+      labels:
+        appset: {{ $appSetName }}
+    spec:
+      project: {{ $appSet.project | default $defaults.project | default "default" | quote }}
+      destination:
+        server: {{ $appSet.server | default $defaults.server | default "https://kubernetes.default.svc" | quote }}
+        namespace: {{ $goTpl.namespace | quote }}
+      {{- if $multiSource }}
+      sources:
+        - repoURL: {{ $appSet.chartRepoURL | default $chart.repoURL | required "chart.repoURL is required for multi-source" | quote }}
+          chart: {{ $goTpl.chartName | quote }}
+          targetRevision: {{ printf "{{ .chartVersion | default \"%s\" }}" ($appSet.chartVersion | default $chart.version | default "1.0.0") | quote }}
+          helm:
+            releaseName: {{ $goTpl.releaseName | quote }}
+            ignoreMissingValueFiles: {{ $appSet.ignoreMissingValueFiles | default $defaults.ignoreMissingValueFiles | default true }}
+            valueFiles: {{ include "chart-library.appSetValueFiles" (merge $valueFilesArgs (dict "prefix" "$values")) | nindent 14 }}
+        - repoURL: {{ $repoURL | quote }}
+          targetRevision: {{ printf "{{ .sourceTargetRevision | default \"%s\" }}" $revision | quote }}
+          {{- if ($appSet.recurseSubmodules | default $defaults.recurseSubmodules | default false) }}
+          directory:
+            recurse: true
+          {{- end }}
+          ref: values
+      {{- else }}
+      source:
+        repoURL: {{ $repoURL | quote }}
+        path: {{ printf "%s/%s" $chartsDir $goTpl.chartName | quote }}
+        targetRevision: {{ printf "{{ .sourceTargetRevision | default \"%s\" }}" $revision | quote }}
+        {{- if ($appSet.recurseSubmodules | default $defaults.recurseSubmodules | default false) }}
+        directory:
+          recurse: true
+        {{- end }}
+        helm:
+          releaseName: {{ $goTpl.releaseName | quote }}
+          ignoreMissingValueFiles: {{ $appSet.ignoreMissingValueFiles | default $defaults.ignoreMissingValueFiles | default true }}
+          valueFiles: {{ include "chart-library.appSetValueFiles" $valueFilesArgs | nindent 12 }}
+      {{- end }}
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - FailOnSharedResource=true
+          - ApplyOutOfSyncOnly=true
+          - CreateNamespace=true
   templatePatch: |
     {{ "{{- if .application }}" }}
     {{ "{{ toYaml .application | nindent 4 }}" }}
     {{ "{{- end }}" }}
 {{ end }}
-{{ end }}
+{{- end }}
 {{- end }}
 
-
-{{/*
-=============================================================================
-Backwards compatibility alias for cluster.applicationset
-=============================================================================
-*/}}
 {{- define "cluster.applicationset" -}}
 {{- include "chart-library.applicationset" . -}}
 {{- end }}

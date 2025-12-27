@@ -62,7 +62,7 @@ tests:
     asserts:
       - equal:
           path: spec.source.repoURL
-          value: "git@github.com:David-Shenker/argo-apps.git"
+          value: "https://github.com/David-Shenker/argo-apps.git"
 
   - it: should set source path
     asserts:
@@ -86,10 +86,10 @@ tests:
     asserts:
       - contains:
           path: spec.source.helm.valueFiles
-          content: "/appsets.yaml"
+          content: "/clusters/dev/appsets.yaml"
       - contains:
           path: spec.source.helm.valueFiles
-          content: "/values/dev/base/appofapps.yaml"
+          content: "/values/dev/_defaults/appofapps.yaml"
 
   # =============================================================================
   # Sync Policy Tests

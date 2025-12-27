@@ -1,104 +1,103 @@
-{{/*
-=============================================================================
-App-of-Apps Template
-Generates ArgoCD Application resources for app-of-apps pattern
-=============================================================================
-*/}}
-
 {{- define "chart-library.appofapps" -}}
-{{- range $namespace, $apps := .Values.appofapps }}
-{{- range $appKey, $appSpec := $apps }}
-{{- if $appSpec.enabled }}
-
-{{- /* Normalize app name */ -}}
-{{- $appName := include "chart-library.normalizeName" $appKey -}}
-
-{{- /* Get configuration from values with safe access */ -}}
-{{- $paths := $.Values.paths | default dict -}}
+{{- $defaults := .Values.defaults | default dict -}}
+{{- $paths := .Values.paths | default dict -}}
+{{- $repo := .Values.repo | default dict -}}
+{{- $chart := .Values.chart | default dict -}}
+{{- $cluster := include "chart-library.clusterName" . -}}
+{{- $cloud := include "chart-library.cloud" . -}}
 {{- $valuesDir := $paths.values | default "values" -}}
 {{- $clustersDir := $paths.clusters | default "clusters" -}}
-{{- $clusterConfig := $.Values.cluster | default dict -}}
-{{- $cluster := "" -}}
-{{- if kindIs "string" $.Values.cluster -}}
-{{- $cluster = $.Values.cluster -}}
-{{- else -}}
-{{- $cluster = $clusterConfig.name | default "" -}}
-{{- end -}}
-{{- $cloud := $clusterConfig.cloud | default "" -}}
-
-{{- /* Repository settings with safe access */ -}}
-{{- $repoConfig := $.Values.repo | default dict -}}
-{{- $repoURL := $appSpec.repoURL | default $repoConfig.url | required "repo.url is required" -}}
-{{- $revision := $appSpec.revision | default $repoConfig.revision | default "HEAD" -}}
-
-{{- /* Defaults with safe access */ -}}
-{{- $defaultsConfig := $.Values.defaults | default dict -}}
-
-{{- /* Determine if multi-source (handle explicit false) */ -}}
-{{- $multiSource := $defaultsConfig.multiSource | default false -}}
-{{- if hasKey $appSpec "multiSource" -}}
-{{- $multiSource = $appSpec.multiSource -}}
-{{- end -}}
-
-{{- /* Chart settings (only needed for multi-source) */ -}}
-{{- $chartConfig := $.Values.chart | default dict -}}
-{{- $chartRepoURL := "" -}}
-{{- $chartVersion := "1.0.0" -}}
-{{- if $multiSource -}}
-{{- $chartRepoURL = $appSpec.chartRepoURL | default $chartConfig.repoURL | required "chart.repoURL is required for multi-source" -}}
-{{- $chartVersion = $appSpec.chartVersion | default $chartConfig.version | default "1.0.0" -}}
-{{- end -}}
-
-{{- /* Build source path */ -}}
-{{- $sourcePath := $appSpec.sourcePath | default (printf "%s/%s" $clustersDir $cluster) -}}
-
-{{- /* Generate full app name with namespace suffix */ -}}
-{{- $fullAppName := include "chart-library.appName" (dict "appName" $appName "namespace" $namespace) -}}
-
-{{- /* Build template values */ -}}
-{{- $appTemplateValues := dict
-    "appName" $fullAppName
-    "argocdNamespace" ($defaultsConfig.argocdNamespace | default "argocd")
-    "project" ($appSpec.project | default $defaultsConfig.project | default "default")
-    "destinationNamespace" $namespace
-    "server" ($appSpec.server | default $defaultsConfig.server | default "https://kubernetes.default.svc")
-    "labels" $appSpec.labels
-    "annotations" $appSpec.annotations
-    "disableFinalizers" ($appSpec.disableFinalizers | default false)
-    "finalizers" $appSpec.finalizers
-    "sourceRepoURL" $repoURL
-    "sourcePath" $sourcePath
-    "sourceTargetRevision" $revision
-    "chartName" $appName
-    "chartReleaseName" $appName
-    "appReleaseName" $appName
-    "valuesDir" $valuesDir
-    "chartRepoURL" $chartRepoURL
-    "chartVersion" $chartVersion
-    "cluster" $cluster
-    "cloud" $cloud
-    "valueFiles" $appSpec.valueFiles
-    "syncPolicy" ($appSpec.syncPolicy | default dict)
-    "recurseSubmodules" ($appSpec.recurseSubmodules | default $defaultsConfig.recurseSubmodules | default false)
-    "multiSource" ($multiSource | toString)
-    "ignoreMissingValueFiles" ($appSpec.ignoreMissingValueFiles | default $defaultsConfig.ignoreMissingValueFiles | default true)
-    "helmValues" $appSpec.helmValues
--}}
+{{- range $namespace, $apps := .Values.appofapps -}}
+{{- range $appKey, $app := $apps -}}
+{{- if $app.enabled -}}
+{{- $appName := include "chart-library.normalizeName" $appKey -}}
+{{- $fullAppName := printf "%s--%s" $appName $namespace -}}
+{{- $multiSource := $app.multiSource | default $defaults.multiSource | default false -}}
+{{- $repoURL := $app.repoURL | default $repo.url | required "repo.url is required" -}}
+{{- $revision := $app.revision | default $repo.revision | default "HEAD" -}}
+{{- $sourcePath := $app.sourcePath | default (printf "%s/%s" $clustersDir $cluster) -}}
+{{- $appContext := merge $app (dict "chartName" $appName "releaseName" $appName "sourcePath" $sourcePath) -}}
+{{- $valueFilesArgs := dict "app" $appContext "paths" $paths "cluster" $cluster "cloud" $cloud "ctx" $ }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
-{{ include "chart-library.application" $appTemplateValues }}
-{{ end }}
-{{ end }}
-{{ end }}
+metadata:
+  name: {{ $fullAppName | quote }}
+  namespace: {{ $defaults.argocdNamespace | default "argocd" }}
+{{- if not $app.disableFinalizers }}
+  finalizers: {{ toYaml ($app.finalizers | default (list "resources-finalizer.argocd.argoproj.io")) | nindent 4 }}
+{{- end }}
+{{- with $app.labels }}
+  labels: {{ toYaml . | nindent 4 }}
+{{- end }}
+{{- with $app.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  project: {{ $app.project | default $defaults.project | default "default" | quote }}
+  destination:
+    server: {{ $app.server | default $defaults.server | default "https://kubernetes.default.svc" | quote }}
+    namespace: {{ $namespace | quote }}
+{{- if $multiSource }}
+  sources:
+    - repoURL: {{ $app.chartRepoURL | default $chart.repoURL | required "chart.repoURL is required for multi-source" | quote }}
+      chart: {{ $appName | quote }}
+      targetRevision: {{ $app.chartVersion | default $chart.version | default "1.0.0" | quote }}
+      helm:
+        releaseName: {{ $appName | quote }}
+        ignoreMissingValueFiles: {{ $app.ignoreMissingValueFiles | default $defaults.ignoreMissingValueFiles | default true }}
+        valueFiles: {{ include "chart-library.appofappsValueFiles" (merge $valueFilesArgs (dict "prefix" "$values")) | nindent 10 }}
+{{- with $app.helmValues }}
+        values: |- {{ toYaml . | nindent 10 }}
+{{- end }}
+    - repoURL: {{ $repoURL | quote }}
+      targetRevision: {{ $revision | quote }}
+{{- if ($app.recurseSubmodules | default $defaults.recurseSubmodules | default false) }}
+      directory:
+        recurse: true
+{{- end }}
+      ref: values
+{{- else }}
+  source:
+    repoURL: {{ $repoURL | quote }}
+    path: {{ $sourcePath | quote }}
+    targetRevision: {{ $revision | quote }}
+{{- if ($app.recurseSubmodules | default $defaults.recurseSubmodules | default false) }}
+    directory:
+      recurse: true
+{{- end }}
+    helm:
+      releaseName: {{ $appName | quote }}
+      ignoreMissingValueFiles: {{ $app.ignoreMissingValueFiles | default $defaults.ignoreMissingValueFiles | default true }}
+      valueFiles: {{ include "chart-library.appofappsValueFiles" $valueFilesArgs | nindent 8 }}
+{{- with $app.helmValues }}
+      values: |- {{ toYaml . | nindent 8 }}
+{{- end }}
+{{- end }}
+{{- $syncPolicy := $app.syncPolicy | default dict -}}
+{{- $automated := $syncPolicy.automated | default dict -}}
+{{- $prune := true -}}
+{{- if hasKey $automated "prune" -}}
+{{- $prune = $automated.prune -}}
+{{- end -}}
+{{- $selfHeal := true -}}
+{{- if hasKey $automated "selfHeal" -}}
+{{- $selfHeal = $automated.selfHeal -}}
+{{- end }}
+  syncPolicy:
+    automated:
+      prune: {{ $prune }}
+      selfHeal: {{ $selfHeal }}
+    syncOptions:
+    {{- $defaultSyncOptions := list "FailOnSharedResource=true" "ApplyOutOfSyncOnly=true" "CreateNamespace=true" }}
+    {{- range ($syncPolicy.syncOptions | default $defaultSyncOptions) }}
+    - {{ . }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
 
-
-{{/*
-=============================================================================
-Backwards compatibility alias for cluster.appofapps
-=============================================================================
-*/}}
 {{- define "cluster.appofapps" -}}
 {{- include "chart-library.appofapps" . -}}
 {{- end }}

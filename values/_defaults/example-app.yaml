@@ -1,0 +1,19 @@
+# Defaults for example-app across all environments
+
+deployments:
+  - name: example-app
+    namespace: default
+    replicas: 1
+    containers:
+      - name: nginx
+        image:
+          registry: docker.io
+          repository: nginx
+          tag: alpine
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi

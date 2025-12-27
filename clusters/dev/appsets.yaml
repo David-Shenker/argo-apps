@@ -1,13 +1,7 @@
-# applicationsets definitions
-#   appSets:
-#     appSetName:
-#       enabled: true
 appSets:
   infra:
     enabled: true
-
   monitoring:
-    enabled: true
-
+    enabled: false
   general:
     enabled: true
