@@ -29,30 +29,30 @@ airflow:
         firstName: Admin
         lastName: User
 
-  # Web UI - minimal resources
+  # Web UI - increased memory for stability
   web:
     replicas: 1
     resources:
       requests:
         cpu: 10m
-        memory: 128Mi
+        memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
     service:
       type: ClusterIP
       port: 8080
 
-  # Scheduler - minimal resources
+  # Scheduler - increased memory for stability
   scheduler:
     replicas: 1
     resources:
       requests:
         cpu: 10m
-        memory: 128Mi
+        memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
 
   # Celery workers - DISABLED for LocalExecutor
   workers:
