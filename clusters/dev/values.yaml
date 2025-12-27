@@ -9,7 +9,7 @@ repo:
   # url: "git@github.com:David-Shenker/argo-apps.git"
   # Use HTTPS for public repositories
   url: "https://github.com/David-Shenker/argo-apps.git"
-  revision: master
+  revision: dev
 
 # Chart Repository Configuration (for multi-source)
 chart:
