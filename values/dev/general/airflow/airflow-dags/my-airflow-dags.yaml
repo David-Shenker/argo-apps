@@ -362,4 +362,3 @@ application:
       automated:
         prune: true
         selfHeal: true
-
