@@ -85,10 +85,21 @@ airflow:
   redis:
     enabled: false
 
-  # DAG sync - disabled, mount DAGs directly or use configmaps
+  # DAG sync - git-sync to pull DAGs from repo
   dags:
     gitSync:
-      enabled: false
+      enabled: true
+      repo: "https://github.com/David-Shenker/argo-apps.git"
+      branch: "dev"
+      subPath: "helm-charts/airflow-dags/dags"
+      syncWait: 60
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
 
   # Logs
   logs:
