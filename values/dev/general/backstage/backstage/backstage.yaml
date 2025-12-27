@@ -46,6 +46,10 @@ backstage:
 
   postgresql:
     enabled: true
+    image:
+      registry: docker.io
+      repository: bitnamilegacy/postgresql
+      tag: 15.4.0-debian-11-r10
     auth:
       username: backstage
       password: backstage-dev
@@ -59,7 +63,7 @@ backstage:
           cpu: 100m
           memory: 256Mi
       persistence:
-        enabled: false  # Disable persistence for dev
+        enabled: false # Disable persistence for dev
 
   service:
     type: ClusterIP
@@ -68,7 +72,7 @@ backstage:
       targetPort: backend
 
   serviceAccount:
-    create: false  # Created via global-templates
+    create: false # Created via global-templates
     name: backstage
 
   ingress:
