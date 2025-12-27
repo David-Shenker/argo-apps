@@ -17,6 +17,15 @@ backstage:
         configMapRef: backstage-app-config
 
     extraEnvVars:
+      # PostgreSQL connection (required for catalog)
+      - name: POSTGRES_HOST
+        value: "backstage-postgresql"
+      - name: POSTGRES_PORT
+        value: "5432"
+      - name: POSTGRES_USER
+        value: "backstage"
+      - name: POSTGRES_PASSWORD
+        value: "backstage-dev"
       # ArgoCD integration
       - name: ARGOCD_AUTH_TOKEN
         valueFrom:
@@ -24,6 +33,8 @@ backstage:
             name: backstage-argocd-token
             key: token
             optional: true
+      - name: ARGOCD_ADMIN_PASSWORD
+        value: "admin"
       # Airflow integration
       - name: AIRFLOW_BASE_URL
         value: "http://airflow-web.airflow.svc.cluster.local:8080"
@@ -43,6 +54,16 @@ backstage:
       limits:
         cpu: 500m
         memory: 1Gi
+
+    # Mount catalog entities
+    extraVolumeMounts:
+      - name: catalog
+        mountPath: /app/catalog
+
+    extraVolumes:
+      - name: catalog
+        configMap:
+          name: backstage-catalog
 
   postgresql:
     enabled: true
@@ -86,9 +107,98 @@ serviceaccounts:
     namespace: backstage
 
 # ============================================
-# Global-Templates: ConfigMap (app-config)
+# Global-Templates: ConfigMaps
 # ============================================
 configmaps:
+  # Catalog entities
+  - name: backstage-catalog
+    namespace: backstage
+    file_content:
+      all.yaml: |
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Domain
+        metadata:
+          name: platform
+          description: Platform and Infrastructure Domain
+        spec:
+          owner: platform-team
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: System
+        metadata:
+          name: gitops-platform
+          description: GitOps Platform powered by ArgoCD
+        spec:
+          owner: platform-team
+          domain: platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: argocd
+          description: ArgoCD GitOps Controller
+          annotations:
+            argocd/app-name: argocd
+            backstage.io/kubernetes-id: argocd
+            backstage.io/kubernetes-namespace: argocd
+        spec:
+          type: service
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: airflow
+          description: Apache Airflow DAG Orchestrator
+          annotations:
+            backstage.io/kubernetes-id: airflow
+            backstage.io/kubernetes-namespace: airflow
+        spec:
+          type: service
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: backstage
+          description: Backstage Developer Portal
+          annotations:
+            backstage.io/kubernetes-id: backstage
+            backstage.io/kubernetes-namespace: backstage
+        spec:
+          type: website
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Group
+        metadata:
+          name: platform-team
+          description: Platform Engineering Team
+        spec:
+          type: team
+          children: []
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: User
+        metadata:
+          name: guest
+        spec:
+          memberOf: [platform-team]
+
+  # App config
   - name: backstage-app-config
     namespace: backstage
     file_content:
@@ -124,14 +234,15 @@ configmaps:
           serviceLocatorMethod:
             type: multiTenant
           clusterLocatorMethods:
+            - type: localKubectlProxy
             - type: config
               clusters:
                 - name: dev-cluster
-                  url: https://kubernetes.default.svc
+                  url: https://kubernetes.default.svc.cluster.local
                   authProvider: serviceAccount
                   skipTLSVerify: true
-                  skipMetricsLookup: false
-                  serviceAccountToken: ${K8S_SA_TOKEN}
+                  skipMetricsLookup: true
+                  caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
                   customResources:
                     - group: argoproj.io
                       apiVersion: v1alpha1
@@ -187,6 +298,12 @@ configmaps:
             pullRequestBranchName: backstage-integration
           rules:
             - allow: [Component, System, API, Resource, Location, Domain, Group, User]
+          locations:
+            # Example components
+            - type: file
+              target: /app/catalog/all.yaml
+              rules:
+                - allow: [Component, System, API, Resource, Domain, Group, User]
 
 # ============================================
 # ClusterRole for Kubernetes Plugin Access
