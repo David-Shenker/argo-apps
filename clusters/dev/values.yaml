@@ -22,6 +22,23 @@ paths:
   charts: "helm-charts"
   clusters: "clusters"
 
+  # Value files for App-of-Apps (static paths, known at Helm time)
+  appofappsValueFiles:
+    - "{{ .valuesDir }}/_defaults/_all.yaml"
+    - "{{ .valuesDir }}/_defaults/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/_defaults/{{ .cloud }}/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/_all.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"
+
+  # Value files for ApplicationSet generated applications
+  appSetValueFiles:
+    - "{{ .valuesDir }}/_defaults/_all.yaml"
+    - "{{ .valuesDir }}/_defaults/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/_defaults/{{ .cloud }}/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/_all.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"
+    - "{{ .valuesDir }}/{{ .cluster }}/{{ .appSetName }}/{{ .namespace }}/{{ .chartName }}/{{ .releaseName }}.yaml"
+
 # Defaults
 defaults:
   multiSource: false # Set to true if using chart repository (multi-source)

@@ -70,13 +70,25 @@ Build sync policy with defaults
 Usage: {{ include "chart-library.syncPolicy" (dict "syncPolicy" .syncPolicy "defaults" $defaults) }}
 */}}
 {{- define "chart-library.syncPolicy" -}}
-{{- $defaultPolicy := dict
-    "automated" (dict "prune" true "selfHeal" true)
-    "syncOptions" (list "FailOnSharedResource=true" "ApplyOutOfSyncOnly=true" "CreateNamespace=true")
--}}
-{{- $basePolicy := .defaults.syncPolicy | default $defaultPolicy -}}
-{{- $overrides := .syncPolicy | default dict -}}
-{{- toYaml (mustMergeOverwrite (deepCopy $basePolicy) $overrides) -}}
+{{- $syncPolicy := .syncPolicy | default dict -}}
+{{- $automated := $syncPolicy.automated | default dict -}}
+{{- $defaultSyncOptions := list "FailOnSharedResource=true" "ApplyOutOfSyncOnly=true" "CreateNamespace=true" -}}
+{{- /* Use coalesce with dict lookup to properly handle false values */ -}}
+{{- $prune := true -}}
+{{- if hasKey $automated "prune" -}}
+{{- $prune = $automated.prune -}}
+{{- end -}}
+{{- $selfHeal := true -}}
+{{- if hasKey $automated "selfHeal" -}}
+{{- $selfHeal = $automated.selfHeal -}}
+{{- end -}}
+automated:
+  prune: {{ $prune }}
+  selfHeal: {{ $selfHeal }}
+syncOptions:
+{{- range ($syncPolicy.syncOptions | default $defaultSyncOptions) }}
+- {{ . }}
+{{- end }}
 {{- end -}}
 
 {{/*
@@ -110,6 +122,7 @@ Parameters:
     "namespace" ($vars.namespace | default "")
     "chartName" ($vars.chartName | default "")
     "releaseName" ($vars.releaseName | default "")
+    "sourcePath" ($vars.sourcePath | default "")
 -}}
 
 {{- range $config }}
@@ -150,6 +163,7 @@ Usage: {{ include "chart-library.appofappsValueFiles" (dict "app" $app "paths" $
     "cloud" .cloud
     "chartName" $app.chartName
     "releaseName" $app.releaseName
+    "sourcePath" ($app.sourcePath | default "")
 -}}
 
 {{- include "chart-library.renderValueFiles" (dict "valueFilesConfig" $valueFilesConfig "vars" $vars "prefix" $prefix "ctx" .ctx) -}}

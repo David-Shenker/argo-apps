@@ -13,8 +13,8 @@
 #   5. values/<env>/<appset>/<ns>/<chart>/<release>.yaml (app-specific)
 # =============================================================================
 
-# Dev environment labels
-global:
+# Dev environment labels (merged with org-wide labels from _defaults/_all.yaml)
+common_defaults:
   labels:
     environment: dev
 

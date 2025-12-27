@@ -20,7 +20,7 @@ chart:
   version: "1.0.0"
 
 # =============================================================================
-# Directory Paths - Configure your file hierarchy here
+# Directory Paths
 # =============================================================================
 paths:
   # Base directory for Helm charts (single-source mode)
@@ -32,43 +32,17 @@ paths:
   # Base directory for values files
   values: "values"
 
-  # =============================================================================
-  # Value Files Hierarchy
-  # =============================================================================
-  # Configure the order and structure of value files for your applications.
-  #
-  # Available variables (evaluated at Helm template time):
-  #   {{ .valuesDir }}      - Base values directory (from paths.values)
-  #   {{ .cluster }}        - Cluster name
-  #   {{ .cloud }}          - Cloud provider (optional)
-  #   {{ .appSetName }}     - ApplicationSet name
-  #   {{ .namespace }}      - Target namespace
-  #   {{ .chartName }}      - Chart name
-  #   {{ .releaseName }}    - Release name
-  #
-  # For ApplicationSet templates, these become Go template expressions:
-  #   namespace  -> {{ index .path.segments <namespaceSegment> }}
-  #   chartName  -> {{ index .path.segments <chartNameSegment> }}
-  #   releaseName -> {{ trimSuffix ".yaml" .path.filename }}
-  # =============================================================================
-
-  # Value files for App-of-Apps (static paths, known at Helm time)
-  appofappsValueFiles:
-    - "{{ .valuesDir }}/_defaults/_all.yaml"
-    - "{{ .valuesDir }}/_defaults/{{ .chartName }}.yaml"
-    - "{{ .valuesDir }}/_defaults/{{ .cloud }}/{{ .chartName }}.yaml"
-    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/_all.yaml"
-    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"
-
-  # Value files for ApplicationSet generated applications
-  # These support both Helm-time and ArgoCD-time (Go template) variables
-  appSetValueFiles:
-    - "{{ .valuesDir }}/_defaults/_all.yaml"
-    - "{{ .valuesDir }}/_defaults/{{ .chartName }}.yaml"
-    - "{{ .valuesDir }}/_defaults/{{ .cloud }}/{{ .chartName }}.yaml"
-    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/_all.yaml"
-    - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"
-    - "{{ .valuesDir }}/{{ .cluster }}/{{ .appSetName }}/{{ .namespace }}/{{ .chartName }}/{{ .releaseName }}.yaml"
+  # Value files hierarchy - define in your cluster values.yaml
+  # Available variables:
+  #   {{ .valuesDir }}    - Base values directory
+  #   {{ .cluster }}      - Cluster name
+  #   {{ .cloud }}        - Cloud provider (optional)
+  #   {{ .appSetName }}   - ApplicationSet name
+  #   {{ .namespace }}    - Target namespace
+  #   {{ .chartName }}    - Chart name
+  #   {{ .releaseName }}  - Release name
+  appofappsValueFiles: []
+  appSetValueFiles: []
 
 # =============================================================================
 # Cluster Configuration
@@ -118,30 +92,15 @@ generator:
   # Path segment indices for extracting values from file path
   # Adjust these if you change the path pattern
   segments:
-    namespace: 3 # Index for namespace in path
-    chartName: 4 # Index for chart name in path
+    namespace: 3
+    chartName: 4
 
 # =============================================================================
 # ApplicationSet Definitions (to be set in cluster values)
 # =============================================================================
 appSets: {}
-#  example:
-#    enabled: true
-#    multiSource: false
-#    preserveResourcesOnDeletion: false
-#    sourceTargetRevision: "main"
-#    chartVersion: "1.0.0"
-#    valueFiles: []   # Override value files for this appset
-#    template: {}     # Override application template
 
 # =============================================================================
 # App-of-Apps Definitions (to be set in cluster values)
 # =============================================================================
 appofapps: {}
-#  namespace-name:
-#    app-name:
-#      enabled: true
-#      project: "default"
-#      multiSource: false
-#      valueFiles: []   # Override value files for this app
-#      syncPolicy: {}

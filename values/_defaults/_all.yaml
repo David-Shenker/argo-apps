@@ -13,7 +13,8 @@
 # =============================================================================
 
 # Organization-wide labels applied to all resources
-global:
+# Uses common_defaults.labels which global-templates reads
+common_defaults:
   labels:
     managed-by: argocd
     organization: my-org

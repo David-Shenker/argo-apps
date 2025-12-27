@@ -128,7 +128,7 @@ spec:
     {{ "{{- if .application }}" }}
     {{ "{{ toYaml .application | nindent 4 }}" }}
     {{ "{{- end }}" }}
-{{- end }}
+{{ end }}
 {{- end }}
 {{- end }}
 
