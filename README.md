@@ -94,11 +94,60 @@ git clone <your-repo-url> argo-apps
 cd argo-apps
 ```
 
-### 2. Install ArgoCD (Initial Bootstrap)
+### 2. Initialize Cluster (Recommended)
 
-ArgoCD needs to be installed first before it can manage itself. After initial installation, ArgoCD will manage its own configuration through the App-of-Apps pattern.
+Use the `init-cluster.sh` script for a complete setup with a local Kind cluster:
 
-**Option A: Use the bootstrap script with SSH key (recommended for private repos)**
+```bash
+# Full setup: Kind cluster + ArgoCD + App-of-Apps
+./scripts/init-cluster.sh --kind --argocd --bootstrap
+
+# Short form (same as above)
+./scripts/init-cluster.sh -kab
+
+# With SSH key for private repositories
+./scripts/init-cluster.sh -kab --ssh-key ~/.ssh/id_rsa
+
+# Custom cluster name
+./scripts/init-cluster.sh -kab --name my-cluster
+
+# With port-forward to ArgoCD UI
+./scripts/init-cluster.sh -kabp
+```
+
+**Available Options:**
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--kind` | `-k` | Create a Kind cluster |
+| `--argocd` | `-a` | Install ArgoCD |
+| `--bootstrap` | `-b` | Deploy App-of-Apps |
+| `--ssh-key FILE` | `-s` | SSH key for private repos |
+| `--port-forward` | `-p` | Port-forward to ArgoCD UI |
+| `--name NAME` | `-n` | Cluster name (default: dev) |
+| `--delete` | `-d` | Delete the cluster |
+| `--help` | `-h` | Show help |
+
+```bash
+# Delete a cluster
+./scripts/init-cluster.sh --delete --name my-cluster
+```
+
+### 3. Install ArgoCD Only (Existing Cluster)
+
+If you already have a Kubernetes cluster running, you can install ArgoCD directly:
+
+**Option A: Use the init script (recommended)**
+
+```bash
+# Install ArgoCD + App-of-Apps on existing cluster
+./scripts/init-cluster.sh --argocd --bootstrap
+
+# With SSH key
+./scripts/init-cluster.sh -ab --ssh-key ~/.ssh/id_rsa
+```
+
+**Option B: Use the bootstrap script with SSH key (for private repos)**
 
 ```bash
 # Run the bootstrap script with your SSH key
@@ -108,14 +157,14 @@ ArgoCD needs to be installed first before it can manage itself. After initial in
 ./scripts/bootstrap-argocd.sh dev ~/.ssh/github_deploy_key
 ```
 
-**Option B: Use the bootstrap script without SSH (for public repos)**
+**Option C: Use the bootstrap script without SSH (for public repos)**
 
 ```bash
 # Run the bootstrap script
 ./scripts/bootstrap-argocd.sh dev
 ```
 
-**Option C: Manual installation**
+**Option D: Manual installation**
 
 ```bash
 # Create the argocd namespace
@@ -142,7 +191,7 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 > 💡 **After initial bootstrap**, ArgoCD will manage itself through the `infra` ApplicationSet using the values at `values/<cluster>/infra/argocd/argocd/argocd.yaml`
 
-### 3. Configure Your Cluster
+### 4. Configure Your Cluster
 
 Navigate to your cluster configuration:
 
@@ -150,7 +199,7 @@ Navigate to your cluster configuration:
 cd ../../clusters/dev
 ```
 
-### 4. Update Cluster Values
+### 5. Update Cluster Values
 
 Edit `values.yaml` with your cluster-specific settings:
 
@@ -169,7 +218,7 @@ defaults:
   argocdNamespace: "argocd"
 ```
 
-### 5. Define ApplicationSets
+### 6. Define ApplicationSets
 
 Edit `appsets.yaml` to define which ApplicationSets to create:
 
@@ -186,7 +235,7 @@ appSets:
     enabled: true
 ```
 
-### 6. Deploy the App-of-Apps
+### 7. Deploy the App-of-Apps (Manual)
 
 ```bash
 # Update Helm dependencies
@@ -199,7 +248,7 @@ helm template . -f appsets.yaml
 helm template . -f appsets.yaml | kubectl apply -f -
 ```
 
-### 7. Deploy Your First Application
+### 8. Deploy Your First Application
 
 An example application is included to help you get started:
 
@@ -236,7 +285,8 @@ Commit and push - ArgoCD will automatically deploy it!
 argo-apps/
 ├── README.md                          # This file
 ├── scripts/                           # Utility scripts
-│   ├── bootstrap-argocd.sh            # Automated bootstrap script
+│   ├── init-cluster.sh                # Full cluster initialization (Kind + ArgoCD)
+│   ├── bootstrap-argocd.sh            # ArgoCD-only bootstrap script
 │   └── setup-repo-ssh.sh              # Configure SSH repository access
 ├── examples/                          # Example configuration files
 │   ├── cluster-values-single-source.yaml
