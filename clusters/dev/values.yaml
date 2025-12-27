@@ -40,5 +40,5 @@ appofapps:
         argocd.argoproj.io/instance: appofapps--argocd
       disableFinalizers: true # Failsafe to prevent deletion of everything
       valueFiles:
-        - "appsets.yaml"
+        - "{{ .sourcePath }}/appsets.yaml"
         - "{{ .valuesDir }}/{{ .cluster }}/base/{{ .chartName }}.yaml"
