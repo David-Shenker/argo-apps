@@ -6,42 +6,30 @@ Generates ArgoCD Application resources for app-of-apps pattern
 */}}
 
 {{- define "chart-library.appofapps" -}}
+{{- $paths := .Values.paths | default dict -}}
+{{- $valuesDir := $paths.values | default "values" -}}
+{{- $clustersDir := $paths.clusters | default "clusters" -}}
+{{- $clusterConfig := .Values.cluster | default dict -}}
+{{- $cluster := ternary .Values.cluster $clusterConfig.name (kindIs "string" .Values.cluster) | default "" -}}
+{{- $cloud := $clusterConfig.cloud | default "" -}}
+{{- $repoConfig := .Values.repo | default dict -}}
+{{- $defaultsConfig := .Values.defaults | default dict -}}
+{{- $chartConfig := .Values.chart | default dict -}}
+
 {{- range $namespace, $apps := .Values.appofapps }}
 {{- range $appKey, $appSpec := $apps }}
 {{- if $appSpec.enabled }}
-
-{{- /* Normalize app name */ -}}
 {{- $appName := include "chart-library.normalizeName" $appKey -}}
 
-{{- /* Get configuration from values with safe access */ -}}
-{{- $paths := $.Values.paths | default dict -}}
-{{- $valuesDir := $paths.values | default "values" -}}
-{{- $clustersDir := $paths.clusters | default "clusters" -}}
-{{- $clusterConfig := $.Values.cluster | default dict -}}
-{{- $cluster := "" -}}
-{{- if kindIs "string" $.Values.cluster -}}
-{{- $cluster = $.Values.cluster -}}
-{{- else -}}
-{{- $cluster = $clusterConfig.name | default "" -}}
-{{- end -}}
-{{- $cloud := $clusterConfig.cloud | default "" -}}
-
-{{- /* Repository settings with safe access */ -}}
-{{- $repoConfig := $.Values.repo | default dict -}}
+{{- /* Repository settings */ -}}
 {{- $repoURL := $appSpec.repoURL | default $repoConfig.url | required "repo.url is required" -}}
 {{- $revision := $appSpec.revision | default $repoConfig.revision | default "HEAD" -}}
 
-{{- /* Defaults with safe access */ -}}
-{{- $defaultsConfig := $.Values.defaults | default dict -}}
-
-{{- /* Determine if multi-source (handle explicit false) */ -}}
+{{- /* Multi-source settings */ -}}
 {{- $multiSource := $defaultsConfig.multiSource | default false -}}
 {{- if hasKey $appSpec "multiSource" -}}
 {{- $multiSource = $appSpec.multiSource -}}
 {{- end -}}
-
-{{- /* Chart settings (only needed for multi-source) */ -}}
-{{- $chartConfig := $.Values.chart | default dict -}}
 {{- $chartRepoURL := "" -}}
 {{- $chartVersion := "1.0.0" -}}
 {{- if $multiSource -}}
@@ -49,13 +37,11 @@ Generates ArgoCD Application resources for app-of-apps pattern
 {{- $chartVersion = $appSpec.chartVersion | default $chartConfig.version | default "1.0.0" -}}
 {{- end -}}
 
-{{- /* Build source path */ -}}
+{{- /* Build source path and full app name */ -}}
 {{- $sourcePath := $appSpec.sourcePath | default (printf "%s/%s" $clustersDir $cluster) -}}
-
-{{- /* Generate full app name with namespace suffix */ -}}
 {{- $fullAppName := include "chart-library.appName" (dict "appName" $appName "namespace" $namespace) -}}
 
-{{- /* Build template values */ -}}
+{{- /* Build template context */ -}}
 {{- $appTemplateValues := dict
     "appName" $fullAppName
     "argocdNamespace" ($defaultsConfig.argocdNamespace | default "argocd")
@@ -88,15 +74,15 @@ Generates ArgoCD Application resources for app-of-apps pattern
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 {{ include "chart-library.application" $appTemplateValues }}
-{{ end }}
-{{ end }}
-{{ end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
 
 
 {{/*
 =============================================================================
-Backwards compatibility alias for cluster.appofapps
+Backwards compatibility alias
 =============================================================================
 */}}
 {{- define "cluster.appofapps" -}}

@@ -1,83 +1,44 @@
 {{/*
 =============================================================================
 Application Template
-Generates the metadata and spec for an ArgoCD Application
+Generates ArgoCD Application metadata and spec
 =============================================================================
 */}}
 
 {{- define "chart-library.application" -}}
+{{- $multiSource := eq (toString .multiSource) "true" -}}
 metadata:
   name: {{ required "appName is required" .appName | quote }}
   namespace: {{ .argocdNamespace | default "argocd" }}
   {{- if not .disableFinalizers }}
-  finalizers:
-    {{- toYaml (.finalizers | default (list "resources-finalizer.argocd.argoproj.io")) | nindent 4 }}
+  finalizers: {{ toYaml (.finalizers | default (list "resources-finalizer.argocd.argoproj.io")) | nindent 4 }}
   {{- end }}
   {{- with .labels }}
-  labels:
-    {{- toYaml . | nindent 4 }}
+  labels: {{ toYaml . | nindent 4 }}
   {{- end }}
   {{- with .annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
+  annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
 spec:
   project: {{ .project | default "default" | quote }}
   destination:
     server: {{ .server | default "https://kubernetes.default.svc" | quote }}
     namespace: {{ .destinationNamespace | quote }}
-
-  {{- if eq (toString .multiSource) "true" }}
-  {{- include "chart-library.application.multiSource" . | nindent 2 }}
+  {{- if $multiSource }}
+  {{- include "chart-library.application.sources" . | nindent 2 }}
   {{- else }}
-  {{- include "chart-library.application.singleSource" . | nindent 2 }}
+  {{- include "chart-library.application.source" . | nindent 2 }}
   {{- end }}
-
-  syncPolicy:
-    {{- include "chart-library.application.syncPolicy" . | nindent 4 }}
+  syncPolicy: {{ include "chart-library.application.syncPolicy" . | nindent 4 }}
 {{- end }}
 
 
 {{/*
 =============================================================================
-Multi-Source Configuration
+Single Source Configuration
 =============================================================================
 */}}
-{{- define "chart-library.application.multiSource" -}}
-sources:
-  # Chart source (from chart repository)
-  - repoURL: {{ required "chartRepoURL is required for multi-source" .chartRepoURL | quote }}
-    chart: {{ .chartName | quote }}
-    targetRevision: {{ required "chartVersion is required" .chartVersion | quote }}
-    helm:
-      {{- with .chartReleaseName }}
-      releaseName: {{ . | quote }}
-      {{- end }}
-      ignoreMissingValueFiles: {{ .ignoreMissingValueFiles | default true }}
-      valueFiles:
-        {{- include "chart-library.application.valueFiles" (dict "ctx" . "prefix" "$values") | nindent 8 }}
-      {{- with .helmValues }}
-      values: |-
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-
-  # Values source (from Git)
-  - repoURL: {{ required "sourceRepoURL is required" .sourceRepoURL | quote }}
-    targetRevision: {{ required "sourceTargetRevision is required" .sourceTargetRevision | quote }}
-    {{- if .recurseSubmodules }}
-    directory:
-      recurse: true
-    {{- end }}
-    ref: values
-{{- end }}
-
-
-{{/*
-=============================================================================
-Single-Source Configuration
-=============================================================================
-*/}}
-{{- define "chart-library.application.singleSource" -}}
+{{- define "chart-library.application.source" -}}
 source:
   repoURL: {{ required "sourceRepoURL is required" .sourceRepoURL | quote }}
   path: {{ required "sourcePath is required" .sourcePath | quote }}
@@ -91,19 +52,45 @@ source:
     releaseName: {{ . | quote }}
     {{- end }}
     ignoreMissingValueFiles: {{ .ignoreMissingValueFiles | default true }}
-    valueFiles:
-      {{- include "chart-library.application.valueFiles" (dict "ctx" .) | nindent 6 }}
+    valueFiles: {{ include "chart-library.application.valueFiles" (dict "ctx" .) | nindent 6 }}
     {{- with .helmValues }}
-    values: |-
-      {{- toYaml . | nindent 6 }}
+    values: |- {{ toYaml . | nindent 6 }}
     {{- end }}
 {{- end }}
 
 
 {{/*
 =============================================================================
+Multi-Source Configuration
+=============================================================================
+*/}}
+{{- define "chart-library.application.sources" -}}
+sources:
+  - repoURL: {{ required "chartRepoURL is required for multi-source" .chartRepoURL | quote }}
+    chart: {{ .chartName | quote }}
+    targetRevision: {{ required "chartVersion is required" .chartVersion | quote }}
+    helm:
+      {{- with .chartReleaseName }}
+      releaseName: {{ . | quote }}
+      {{- end }}
+      ignoreMissingValueFiles: {{ .ignoreMissingValueFiles | default true }}
+      valueFiles: {{ include "chart-library.application.valueFiles" (dict "ctx" . "prefix" "$values") | nindent 8 }}
+      {{- with .helmValues }}
+      values: |- {{ toYaml . | nindent 8 }}
+      {{- end }}
+  - repoURL: {{ required "sourceRepoURL is required" .sourceRepoURL | quote }}
+    targetRevision: {{ required "sourceTargetRevision is required" .sourceTargetRevision | quote }}
+    {{- if .recurseSubmodules }}
+    directory:
+      recurse: true
+    {{- end }}
+    ref: values
+{{- end }}
+
+
+{{/*
+=============================================================================
 Value Files Generator
-Generates the list of value files based on configuration
 =============================================================================
 */}}
 {{- define "chart-library.application.valueFiles" -}}
@@ -114,7 +101,6 @@ Generates the list of value files based on configuration
 {{- if $valueFiles -}}
   {{- range $valueFiles -}}
     {{- $path := tpl . $ctx | replace "\\" "" -}}
-    {{- /* Handle paths that already start with / */ -}}
     {{- if hasPrefix "/" $path }}
       {{- if $prefix }}
 - {{ printf "%s%s" $prefix $path | quote }}
@@ -130,7 +116,7 @@ Generates the list of value files based on configuration
     {{- end }}
   {{- end -}}
 {{- else -}}
-  {{/* Default value files hierarchy */}}
+  {{- /* Build default value files hierarchy */ -}}
   {{- $valuesDir := $ctx.valuesDir | default "values" -}}
   {{- $cluster := $ctx.cluster | default "" -}}
   {{- $cloud := $ctx.cloud | default "" -}}
@@ -139,21 +125,16 @@ Generates the list of value files based on configuration
   {{- $chartName := $ctx.chartName | default "" -}}
   {{- $appReleaseName := $ctx.appReleaseName | default "" -}}
 
-  {{/* 1. Org-wide defaults for all envs, all apps */}}
+  {{- /* 1. Org-wide defaults */ -}}
   {{- if $prefix }}
 - {{ printf "%s/%s/_defaults/_all.yaml" $prefix $valuesDir | quote }}
-  {{- else }}
-- {{ printf "/%s/_defaults/_all.yaml" $valuesDir | quote }}
-  {{- end }}
-
-  {{/* 2. Org-wide chart-specific defaults for all envs */}}
-  {{- if $prefix }}
 - {{ printf "%s/%s/_defaults/%s.yaml" $prefix $valuesDir $chartName | quote }}
   {{- else }}
+- {{ printf "/%s/_defaults/_all.yaml" $valuesDir | quote }}
 - {{ printf "/%s/_defaults/%s.yaml" $valuesDir $chartName | quote }}
   {{- end }}
 
-  {{/* 3. Cloud-specific values (if cloud is set) */}}
+  {{- /* 2. Cloud-specific values */ -}}
   {{- if $cloud }}
     {{- if $prefix }}
 - {{ printf "%s/%s/_defaults/%s/%s.yaml" $prefix $valuesDir $cloud $chartName | quote }}
@@ -162,21 +143,16 @@ Generates the list of value files based on configuration
     {{- end }}
   {{- end }}
 
-  {{/* 4. Environment defaults for all apps in this env */}}
+  {{- /* 3. Environment defaults */ -}}
   {{- if $prefix }}
 - {{ printf "%s/%s/%s/_defaults/_all.yaml" $prefix $valuesDir $cluster | quote }}
-  {{- else }}
-- {{ printf "/%s/%s/_defaults/_all.yaml" $valuesDir $cluster | quote }}
-  {{- end }}
-
-  {{/* 5. Environment chart-specific defaults */}}
-  {{- if $prefix }}
 - {{ printf "%s/%s/%s/_defaults/%s.yaml" $prefix $valuesDir $cluster $chartName | quote }}
   {{- else }}
+- {{ printf "/%s/%s/_defaults/_all.yaml" $valuesDir $cluster | quote }}
 - {{ printf "/%s/%s/_defaults/%s.yaml" $valuesDir $cluster $chartName | quote }}
   {{- end }}
 
-  {{/* 6. App-specific values */}}
+  {{- /* 4. App-specific values */ -}}
   {{- if and $appSetName $namespace $appReleaseName }}
     {{- if $prefix }}
 - {{ printf "%s/%s/%s/%s/%s/%s/%s.yaml" $prefix $valuesDir $cluster $appSetName $namespace $chartName $appReleaseName | quote }}
@@ -190,7 +166,7 @@ Generates the list of value files based on configuration
 
 {{/*
 =============================================================================
-Sync Policy
+Sync Policy with defaults
 =============================================================================
 */}}
 {{- define "chart-library.application.syncPolicy" -}}
@@ -198,17 +174,15 @@ Sync Policy
     "automated" (dict "prune" true "selfHeal" true)
     "syncOptions" (list "FailOnSharedResource=true" "ApplyOutOfSyncOnly=true" "CreateNamespace=true")
 -}}
-{{- $override := .syncPolicy | default dict -}}
-{{- toYaml (mustMergeOverwrite $defaults $override) -}}
+{{- toYaml (mustMergeOverwrite $defaults (.syncPolicy | default dict)) -}}
 {{- end }}
 
 
 {{/*
 =============================================================================
-Default Sync Policy (backwards compatibility alias)
+Backwards compatibility alias
 =============================================================================
 */}}
 {{- define "chart-library.application.defaultSyncPolicy" -}}
 {{- include "chart-library.application.syncPolicy" . -}}
 {{- end }}
-

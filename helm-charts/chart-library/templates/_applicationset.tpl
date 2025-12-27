@@ -1,59 +1,42 @@
 {{/*
 =============================================================================
 ApplicationSet Template
-Generates ArgoCD ApplicationSet resources with configurable paths
+Generates ArgoCD ApplicationSet resources
 =============================================================================
 */}}
 
 {{- define "chart-library.applicationset" -}}
-{{- range $appSetKey, $appSetSpec := .Values.appSets }}
-{{- if $appSetSpec.enabled }}
-
-{{- /* Normalize appSet name */ -}}
-{{- $appSetName := include "chart-library.normalizeName" $appSetKey -}}
-{{- $appSetSpec := coalesce $appSetSpec dict -}}
-
-{{- /* Get configuration from values with safe access */ -}}
-{{- $paths := $.Values.paths | default dict -}}
+{{- $paths := .Values.paths | default dict -}}
 {{- $valuesDir := $paths.values | default "values" -}}
 {{- $chartsDir := $paths.charts | default "helm-charts" -}}
-{{- $clusterConfig := $.Values.cluster | default dict -}}
-{{- $cluster := "" -}}
-{{- if kindIs "string" $.Values.cluster -}}
-{{- $cluster = $.Values.cluster -}}
-{{- else -}}
-{{- $cluster = $clusterConfig.name | default "" -}}
-{{- end -}}
+{{- $clusterConfig := .Values.cluster | default dict -}}
+{{- $cluster := ternary .Values.cluster $clusterConfig.name (kindIs "string" .Values.cluster) | default "" -}}
 {{- $cloud := $clusterConfig.cloud | default "" -}}
+{{- $repoConfig := .Values.repo | default dict -}}
+{{- $defaultsConfig := .Values.defaults | default dict -}}
+{{- $chartConfig := .Values.chart | default dict -}}
+{{- $generatorConfig := .Values.generator | default dict -}}
+{{- $segmentsConfig := $generatorConfig.segments | default dict -}}
 
-{{- /* Repository settings with safe access */ -}}
-{{- $repoConfig := $.Values.repo | default dict -}}
+{{- range $appSetKey, $appSetSpec := .Values.appSets }}
+{{- if $appSetSpec.enabled }}
+{{- $appSetSpec := coalesce $appSetSpec dict -}}
+{{- $appSetName := include "chart-library.normalizeName" $appSetKey -}}
+
+{{- /* Repository settings */ -}}
 {{- $repoURL := $appSetSpec.repoURL | default $repoConfig.url | required "repo.url is required" -}}
 {{- $revision := $appSetSpec.revision | default $repoConfig.revision | default "HEAD" -}}
 
-{{- /* Generator path configuration with safe access */ -}}
-{{- $generatorConfig := $.Values.generator | default dict -}}
-{{- $segmentsConfig := $generatorConfig.segments | default dict -}}
+{{- /* Path segments configuration */ -}}
 {{- $segmentNamespace := $segmentsConfig.namespace | default 3 -}}
 {{- $segmentChartName := $segmentsConfig.chartName | default 4 -}}
-
-{{- /* Build the generator path pattern */ -}}
 {{- $pathPattern := $appSetSpec.pathPattern | default (printf "%s/%s/%s/*/*/*.yaml" $valuesDir $cluster $appSetName) -}}
 
-{{- /* Defaults with safe access */ -}}
-{{- $defaultsConfig := $.Values.defaults | default dict -}}
-
-{{- /* Get parent App-of-Apps instance label */ -}}
-{{- $parentInstance := $defaultsConfig.parentInstance | default "" -}}
-
-{{- /* Determine if multi-source (handle explicit false) */ -}}
+{{- /* Multi-source settings */ -}}
 {{- $multiSource := $defaultsConfig.multiSource | default false -}}
 {{- if hasKey $appSetSpec "multiSource" -}}
 {{- $multiSource = $appSetSpec.multiSource -}}
 {{- end -}}
-
-{{- /* Chart settings (only needed for multi-source) */ -}}
-{{- $chartConfig := $.Values.chart | default dict -}}
 {{- $chartRepoURL := "" -}}
 {{- $chartVersion := "1.0.0" -}}
 {{- if $multiSource -}}
@@ -61,24 +44,19 @@ Generates ArgoCD ApplicationSet resources with configurable paths
 {{- $chartVersion = $appSetSpec.chartVersion | default $chartConfig.version | default "1.0.0" -}}
 {{- end -}}
 
-{{- /* Preservation settings */ -}}
+{{- /* Preservation and parent settings */ -}}
 {{- $preserveResourcesOnDeletion := $appSetSpec.preserveResourcesOnDeletion | default false -}}
+{{- $parentInstance := $defaultsConfig.parentInstance | default "" -}}
 
-{{- /* Build dynamic Go template expressions for ApplicationSet */ -}}
+{{- /* Go template expressions for ApplicationSet */ -}}
 {{- $goTplNamespace := printf "{{ index .path.segments %d }}" (int $segmentNamespace) -}}
 {{- $goTplChartName := printf "{{ index .path.segments %d }}" (int $segmentChartName) -}}
 {{- $goTplFilename := "{{ trimSuffix \".yaml\" .path.filename }}" -}}
-
-{{- /* Build chart release name expression */ -}}
 {{- $goTplReleaseName := printf "{{ .chartReleaseName | default (ternary (trimSuffix \".yaml\" .path.filename) (printf \"%%s-%%s\" (index .path.segments %d) (trimSuffix \".yaml\" .path.filename)) (contains (index .path.segments %d) (trimSuffix \".yaml\" .path.filename))) }}" (int $segmentChartName) (int $segmentChartName) -}}
-
-{{- /* Build app name (includes namespace for uniqueness) */ -}}
 {{- $goTplAppName := printf "%s--%s" $goTplReleaseName $goTplNamespace -}}
-
-{{- /* Source path for single-source mode */ -}}
 {{- $sourcePath := printf "%s/%s" $chartsDir $goTplChartName -}}
 
-{{- /* Build template values for the application */ -}}
+{{- /* Build template context */ -}}
 {{- $appTemplateValues := dict
     "appName" $goTplAppName
     "appSetName" $appSetName
@@ -117,8 +95,7 @@ metadata:
     {{- end }}
   {{- end }}
   {{- with $appSetSpec.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
+  annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
 spec:
   syncPolicy:
@@ -134,23 +111,19 @@ spec:
         values:
           chartVersion: {{ $chartVersion | quote }}
         {{- end }}
-
-  template:
-    {{- toYaml (mustMergeOverwrite dict (include "chart-library.application" $appTemplateValues | fromYaml) ($appSetSpec.template | default dict)) | nindent 4 }}
-
-  # Allow application values file to override template settings
+  template: {{ toYaml (mustMergeOverwrite dict (include "chart-library.application" $appTemplateValues | fromYaml) ($appSetSpec.template | default dict)) | nindent 4 }}
   templatePatch: |
     {{ "{{- if .application }}" }}
     {{ "{{ toYaml .application | nindent 4 }}" }}
     {{ "{{- end }}" }}
-{{ end }}
-{{ end }}
+{{- end }}
+{{- end }}
 {{- end }}
 
 
 {{/*
 =============================================================================
-Backwards compatibility alias for cluster.applicationset
+Backwards compatibility alias
 =============================================================================
 */}}
 {{- define "cluster.applicationset" -}}
