@@ -4,8 +4,9 @@
 airflow:
   # Airflow core configuration
   airflow:
-    # LocalExecutor = no workers, no Redis needed (saves ~500MB+)
-    executor: LocalExecutor
+    # KubernetesExecutor = no workers, no Redis needed (saves ~500MB+)
+    # Tasks run as ephemeral pods
+    executor: KubernetesExecutor
 
     image:
       repository: apache/airflow
