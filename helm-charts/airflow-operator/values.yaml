@@ -97,7 +97,7 @@ airflow:
       enabled: false
       repo: ""
       branch: "main"
-      subPath: "dags"
+      repoSubPath: "dags"
       syncWait: 60
 
   # Logs configuration

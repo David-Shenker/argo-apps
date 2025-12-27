@@ -91,7 +91,7 @@ airflow:
       enabled: true
       repo: "https://github.com/David-Shenker/argo-apps.git"
       branch: "dev"
-      subPath: "helm-charts/airflow-dags/dags"
+      repoSubPath: "helm-charts/airflow-dags/dags"
       syncWait: 60
       resources:
         requests:
