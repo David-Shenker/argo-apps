@@ -1,0 +1,25 @@
+# =============================================================================
+# Dev Environment Defaults for example-app
+# =============================================================================
+# These values apply to ALL example-app instances in the dev environment.
+# Path: values/dev/_defaults/example-app.yaml (position 4 in hierarchy)
+# =============================================================================
+
+# Dev-specific defaults - lower resources for development
+deployments:
+  - name: example-app
+    namespace: default
+    replicas: 1
+    containers:
+      - name: nginx
+        image:
+          registry: docker.io
+          repository: nginx
+          tag: alpine
+        resources:
+          requests:
+            cpu: 5m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
