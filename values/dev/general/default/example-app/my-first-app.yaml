@@ -76,8 +76,9 @@ configmaps:
     file_content:
       index.html: |
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
             <title>My First App</title>
             <style>
                 body {
