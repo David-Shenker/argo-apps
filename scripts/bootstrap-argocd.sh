@@ -76,9 +76,6 @@ cd "$ROOT_DIR/helm-charts/argocd"
 helm dependency update
 echo -e "${GREEN}✓${NC} Dependencies updated"
 
-# Build helm install args
-HELM_ARGS=()
-
 # If SSH key is provided, configure repository credentials
 if [ -n "$SSH_KEY_FILE" ]; then
   echo -e "${BLUE}[4/7]${NC} Configuring SSH repository credentials..."
@@ -96,24 +93,28 @@ if [ -n "$SSH_KEY_FILE" ]; then
   # Read SSH key
   SSH_KEY_CONTENT=$(cat "$SSH_KEY_FILE")
 
-  HELM_ARGS+=(
-    --set "repoCredentials.enabled=true"
-    --set "repoCredentials.url=$REPO_URL"
-    --set-file "repoCredentials.sshPrivateKey=$SSH_KEY_FILE"
-  )
   echo -e "${GREEN}✓${NC} SSH credentials configured for: $REPO_URL"
+
+  # Install ArgoCD with SSH credentials
+  echo -e "${BLUE}[5/7]${NC} Installing ArgoCD with SSH credentials..."
+  helm upgrade --install argocd . \
+    --namespace "$ARGOCD_NAMESPACE" \
+    --wait \
+    --timeout 5m \
+    --set "repoCredentials.enabled=true" \
+    --set "repoCredentials.url=$REPO_URL" \
+    --set-file "repoCredentials.sshPrivateKey=$SSH_KEY_FILE"
 else
   echo -e "${BLUE}[4/7]${NC} Skipping SSH configuration (no key provided)..."
   echo -e "${YELLOW}⚠${NC} No SSH key provided. You may need to add repository credentials manually."
-fi
 
-# Install ArgoCD
-echo -e "${BLUE}[5/7]${NC} Installing ArgoCD..."
-helm upgrade --install argocd . \
-  --namespace "$ARGOCD_NAMESPACE" \
-  --wait \
-  --timeout 5m \
-  "${HELM_ARGS[@]}"
+  # Install ArgoCD without SSH credentials
+  echo -e "${BLUE}[5/7]${NC} Installing ArgoCD..."
+  helm upgrade --install argocd . \
+    --namespace "$ARGOCD_NAMESPACE" \
+    --wait \
+    --timeout 5m
+fi
 echo -e "${GREEN}✓${NC} ArgoCD installed"
 
 # Wait for ArgoCD to be ready
