@@ -21,14 +21,18 @@ backstage:
       - name: ARGOCD_AUTH_TOKEN
         valueFrom:
           secretKeyRef:
-            name: backstage-argocd-token
+            name: backstage-argocd-credentials
             key: token
             optional: true
       - name: ARGOCD_ADMIN_PASSWORD
-        value: "admin"
+        valueFrom:
+          secretKeyRef:
+            name: backstage-argocd-credentials
+            key: password
+            optional: false
       # Airflow integration
       - name: AIRFLOW_BASE_URL
-        value: "http://airflow-web.airflow.svc.cluster.local:8080"
+        value: "http://airflow-operator-web.airflow.svc.cluster.local:8080"
       - name: AIRFLOW_USERNAME
         value: "admin"
       - name: AIRFLOW_PASSWORD
@@ -36,7 +40,7 @@ backstage:
           secretKeyRef:
             name: backstage-airflow-credentials
             key: password
-            optional: true
+            optional: false
 
     resources:
       requests:
@@ -220,12 +224,17 @@ configmaps:
               password: ${POSTGRES_PASSWORD}
               database: backstage_plugin_catalog
 
+        # Enable guest authentication for development
+        auth:
+          providers:
+            guest:
+              dangerouslyAllowOutsideDevelopment: true
+
         # Kubernetes plugin configuration
         kubernetes:
           serviceLocatorMethod:
             type: multiTenant
           clusterLocatorMethods:
-            - type: localKubectlProxy
             - type: config
               clusters:
                 - name: dev-cluster
@@ -256,7 +265,7 @@ configmaps:
 
         # Apache Airflow plugin configuration
         airflow:
-          baseUrl: http://airflow-web.airflow.svc.cluster.local:8080
+          baseUrl: http://airflow-operator-web.airflow.svc.cluster.local:8080
           username: ${AIRFLOW_USERNAME}
           password: ${AIRFLOW_PASSWORD}
 
@@ -270,7 +279,7 @@ configmaps:
               headers:
                 Cookie: argocd.token=${ARGOCD_AUTH_TOKEN}
             '/airflow':
-              target: http://airflow-web.airflow.svc.cluster.local:8080
+              target: http://airflow-operator-web.airflow.svc.cluster.local:8080
               changeOrigin: true
               secure: false
 
@@ -295,6 +304,24 @@ configmaps:
               target: /app/catalog/all.yaml
               rules:
                 - allow: [Component, System, API, Resource, Domain, Group, User]
+
+# ============================================
+# Global-Templates: Secrets
+# ============================================
+secrets:
+  # Airflow credentials for Backstage integration
+  - name: backstage-airflow-credentials
+    namespace: backstage
+    stringData:
+      password: admin
+
+  # ArgoCD credentials for Backstage integration
+  # Note: In production, use ExternalSecrets or copy from argocd namespace
+  - name: backstage-argocd-credentials
+    namespace: backstage
+    stringData:
+      password: admin
+      token: ""
 
 # ============================================
 # ClusterRole for Kubernetes Plugin Access

@@ -94,6 +94,14 @@ configmaps: []
 #         app:
 #           title: Backstage
 
+# Secrets using global-templates
+secrets: []
+# Example:
+#   - name: backstage-credentials
+#     namespace: backstage
+#     stringData:
+#       password: my-password
+
 # ServiceAccounts using global-templates
 serviceaccounts: []
 # Example:
