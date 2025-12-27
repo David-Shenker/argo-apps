@@ -1,0 +1,2 @@
+{{- include "global-templates.rolebinding" (dict "rolebindings" .Values.rolebindings "Values" .Values "Release" .Release "Chart" .Chart) }}
+

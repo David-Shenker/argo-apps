@@ -1,0 +1,2 @@
+{{- include "global-templates.role" (dict "roles" .Values.roles "Values" .Values "Release" .Release "Chart" .Chart) }}
+

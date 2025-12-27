@@ -1,0 +1,279 @@
+# Backstage Developer Portal for dev cluster
+# Integrations: Kubernetes, ArgoCD, Apache Airflow
+
+# ============================================
+# Upstream Backstage Chart Configuration
+# ============================================
+backstage:
+  backstage:
+    image:
+      registry: ghcr.io
+      repository: backstage/backstage
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    extraAppConfig:
+      - filename: app-config.extra.yaml
+        configMapRef: backstage-app-config
+
+    extraEnvVars:
+      # ArgoCD integration
+      - name: ARGOCD_AUTH_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: backstage-argocd-token
+            key: token
+            optional: true
+      # Airflow integration
+      - name: AIRFLOW_BASE_URL
+        value: "http://airflow-web.airflow.svc.cluster.local:8080"
+      - name: AIRFLOW_USERNAME
+        value: "admin"
+      - name: AIRFLOW_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: backstage-airflow-credentials
+            key: password
+            optional: true
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+  postgresql:
+    enabled: true
+    auth:
+      username: backstage
+      password: backstage-dev
+      database: backstage_plugin_catalog
+    primary:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 256Mi
+      persistence:
+        enabled: false  # Disable persistence for dev
+
+  service:
+    type: ClusterIP
+    ports:
+      backend: 7007
+      targetPort: backend
+
+  serviceAccount:
+    create: false  # Created via global-templates
+    name: backstage
+
+  ingress:
+    enabled: false
+
+# ============================================
+# Global-Templates: ServiceAccount
+# ============================================
+serviceaccounts:
+  - name: backstage
+    namespace: backstage
+
+# ============================================
+# Global-Templates: ConfigMap (app-config)
+# ============================================
+configmaps:
+  - name: backstage-app-config
+    namespace: backstage
+    file_content:
+      app-config.extra.yaml: |
+        app:
+          title: Dev Backstage
+          baseUrl: http://localhost:7007
+
+        organization:
+          name: My Organization
+
+        backend:
+          baseUrl: http://localhost:7007
+          listen:
+            port: 7007
+          csp:
+            connect-src: ["'self'", 'http:', 'https:']
+          cors:
+            origin: http://localhost:7007
+            methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+            credentials: true
+          database:
+            client: pg
+            connection:
+              host: ${POSTGRES_HOST}
+              port: ${POSTGRES_PORT}
+              user: ${POSTGRES_USER}
+              password: ${POSTGRES_PASSWORD}
+              database: backstage_plugin_catalog
+
+        # Kubernetes plugin configuration
+        kubernetes:
+          serviceLocatorMethod:
+            type: multiTenant
+          clusterLocatorMethods:
+            - type: config
+              clusters:
+                - name: dev-cluster
+                  url: https://kubernetes.default.svc
+                  authProvider: serviceAccount
+                  skipTLSVerify: true
+                  skipMetricsLookup: false
+                  serviceAccountToken: ${K8S_SA_TOKEN}
+                  customResources:
+                    - group: argoproj.io
+                      apiVersion: v1alpha1
+                      plural: applications
+                    - group: argoproj.io
+                      apiVersion: v1alpha1
+                      plural: applicationsets
+
+        # ArgoCD plugin configuration
+        argocd:
+          baseUrl: http://argocd-server.argocd.svc.cluster.local
+          username: admin
+          password: ${ARGOCD_ADMIN_PASSWORD}
+          appLocatorMethods:
+            - type: config
+              instances:
+                - name: argocd
+                  url: http://argocd-server.argocd.svc.cluster.local
+                  token: ${ARGOCD_AUTH_TOKEN}
+
+        # Apache Airflow plugin configuration
+        airflow:
+          baseUrl: http://airflow-web.airflow.svc.cluster.local:8080
+          username: ${AIRFLOW_USERNAME}
+          password: ${AIRFLOW_PASSWORD}
+
+        # Proxy configuration for plugins
+        proxy:
+          endpoints:
+            '/argocd/api':
+              target: http://argocd-server.argocd.svc.cluster.local/api/v1
+              changeOrigin: true
+              secure: false
+              headers:
+                Cookie: argocd.token=${ARGOCD_AUTH_TOKEN}
+            '/airflow':
+              target: http://airflow-web.airflow.svc.cluster.local:8080
+              changeOrigin: true
+              secure: false
+
+        # Tech docs configuration
+        techdocs:
+          builder: local
+          generator:
+            runIn: local
+          publisher:
+            type: local
+
+        # Software catalog configuration
+        catalog:
+          import:
+            entityFilename: catalog-info.yaml
+            pullRequestBranchName: backstage-integration
+          rules:
+            - allow: [Component, System, API, Resource, Location, Domain, Group, User]
+
+# ============================================
+# ClusterRole for Kubernetes Plugin Access
+# ============================================
+clusterroles:
+  - name: backstage-kubernetes-reader
+    rules:
+      # Core API resources
+      - apiGroups: [""]
+        resources:
+          - pods
+          - pods/log
+          - services
+          - configmaps
+          - namespaces
+          - nodes
+          - endpoints
+          - events
+          - limitranges
+          - resourcequotas
+          - persistentvolumeclaims
+          - persistentvolumes
+          - serviceaccounts
+        verbs: ["get", "list", "watch"]
+      # Apps API
+      - apiGroups: ["apps"]
+        resources:
+          - deployments
+          - replicasets
+          - statefulsets
+          - daemonsets
+        verbs: ["get", "list", "watch"]
+      # Batch API
+      - apiGroups: ["batch"]
+        resources:
+          - jobs
+          - cronjobs
+        verbs: ["get", "list", "watch"]
+      # Autoscaling API
+      - apiGroups: ["autoscaling"]
+        resources:
+          - horizontalpodautoscalers
+        verbs: ["get", "list", "watch"]
+      # Networking API
+      - apiGroups: ["networking.k8s.io"]
+        resources:
+          - ingresses
+          - networkpolicies
+        verbs: ["get", "list", "watch"]
+      # ArgoCD resources
+      - apiGroups: ["argoproj.io"]
+        resources:
+          - applications
+          - applicationsets
+          - appprojects
+          - workflows
+          - workflowtemplates
+        verbs: ["get", "list", "watch"]
+      # Metrics API
+      - apiGroups: ["metrics.k8s.io"]
+        resources:
+          - pods
+          - nodes
+        verbs: ["get", "list"]
+
+# ============================================
+# ClusterRoleBinding
+# ============================================
+clusterrolebindings:
+  - name: backstage-kubernetes-reader
+    roleRef:
+      kind: ClusterRole
+      name: backstage-kubernetes-reader
+    subjects:
+      - kind: ServiceAccount
+        name: backstage
+        namespace: backstage
+
+# ============================================
+# ArgoCD Application Overrides
+# ============================================
+application:
+  metadata:
+    annotations:
+      argocd.argoproj.io/sync-wave: "0"
+      description: "Backstage Developer Portal with K8s, ArgoCD, and Airflow integrations"
+  spec:
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true

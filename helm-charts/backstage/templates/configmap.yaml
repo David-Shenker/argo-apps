@@ -1,0 +1,2 @@
+{{- include "global-templates.configmap" (dict "configmaps" .Values.configmaps "Values" .Values "Release" .Release "Chart" .Chart "Files" .Files) }}
+

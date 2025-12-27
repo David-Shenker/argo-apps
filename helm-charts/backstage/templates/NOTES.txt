@@ -1,0 +1,17 @@
+Backstage Developer Portal has been deployed!
+
+To access Backstage:
+{{- if .Values.backstage.ingress.enabled }}
+  URL: http{{ if $.Values.backstage.ingress.tls }}s{{ end }}://{{ .Values.backstage.ingress.host }}
+{{- else }}
+  kubectl port-forward svc/{{ .Release.Name }}-backstage 7007:7007 -n {{ .Release.Namespace }}
+  Then open: http://localhost:7007
+{{- end }}
+
+Integrations enabled:
+  - Kubernetes: View pods, deployments, and services
+  - ArgoCD: View application sync status and history
+  - Apache Airflow: View DAGs and pipeline status
+
+For more information, visit: https://backstage.io/docs
+

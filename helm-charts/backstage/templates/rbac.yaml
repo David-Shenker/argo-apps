@@ -1,0 +1,59 @@
+{{/*
+ClusterRole and ClusterRoleBinding for Backstage Kubernetes plugin
+These are cluster-scoped resources not available in global-templates
+*/}}
+{{- range .Values.clusterroles }}
+{{- if not .disabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ required "Name is required for clusterrole" .name }}
+  labels:
+    app.kubernetes.io/name: backstage
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+rules:
+  {{- range .rules }}
+  - apiGroups: {{ toJson .apiGroups }}
+    resources: {{ toJson .resources }}
+    verbs: {{ toJson .verbs }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- range .Values.clusterrolebindings }}
+{{- if not .disabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ required "Name is required for clusterrolebinding" .name }}
+  labels:
+    app.kubernetes.io/name: backstage
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: {{ .roleRef.kind | default "ClusterRole" }}
+  name: {{ required "roleRef.name is required" .roleRef.name }}
+subjects:
+  {{- range .subjects }}
+  - kind: {{ .kind }}
+    name: {{ .name }}
+    namespace: {{ .namespace }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

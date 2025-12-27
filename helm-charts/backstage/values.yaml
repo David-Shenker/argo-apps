@@ -1,0 +1,132 @@
+# Default values for backstage
+# Deploys Backstage Developer Portal with Kubernetes, ArgoCD, and Airflow integrations
+
+# ============================================
+# Upstream Backstage Chart Configuration
+# ============================================
+backstage:
+  backstage:
+    image:
+      registry: ghcr.io
+      repository: backstage/backstage
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    extraAppConfig:
+      - filename: app-config.extra.yaml
+        configMapRef: backstage-app-config
+
+    extraEnvVars:
+      - name: KUBERNETES_SERVICE_HOST
+        value: "kubernetes.default.svc"
+      - name: KUBERNETES_SERVICE_PORT
+        value: "443"
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+
+    command:
+      [
+        "node",
+        "packages/backend",
+        "--config",
+        "app-config.yaml",
+        "--config",
+        "app-config.extra.yaml",
+      ]
+
+  postgresql:
+    enabled: true
+    auth:
+      username: backstage
+      password: backstage
+      database: backstage_plugin_catalog
+    primary:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+      persistence:
+        enabled: true
+        size: 1Gi
+
+  ingress:
+    enabled: false
+    className: ""
+    host: backstage.local
+
+  service:
+    type: ClusterIP
+    ports:
+      backend: 7007
+      targetPort: backend
+
+  serviceAccount:
+    create: false # We create it via global-templates
+    name: backstage
+
+  networkPolicy:
+    enabled: false
+
+  metrics:
+    serviceMonitor:
+      enabled: false
+
+# ============================================
+# Global-Templates Resources
+# ============================================
+
+# ConfigMaps using global-templates
+configmaps: []
+# Example:
+#   - name: backstage-app-config
+#     namespace: backstage
+#     file_content:
+#       app-config.extra.yaml: |
+#         app:
+#           title: Backstage
+
+# ServiceAccounts using global-templates
+serviceaccounts: []
+# Example:
+#   - name: backstage
+#     namespace: backstage
+
+# Roles using global-templates
+roles: []
+
+# RoleBindings using global-templates
+rolebindings: []
+
+# ============================================
+# ClusterRole/ClusterRoleBinding (custom templates)
+# ============================================
+
+# ClusterRoles for Kubernetes plugin access
+clusterroles: []
+# Example:
+#   - name: backstage-kubernetes-reader
+#     rules:
+#       - apiGroups: [""]
+#         resources: ["pods", "services"]
+#         verbs: ["get", "list", "watch"]
+
+# ClusterRoleBindings
+clusterrolebindings: []
+# Example:
+#   - name: backstage-kubernetes-reader
+#     roleRef:
+#       kind: ClusterRole
+#       name: backstage-kubernetes-reader
+#     subjects:
+#       - kind: ServiceAccount
+#         name: backstage
+#         namespace: backstage
