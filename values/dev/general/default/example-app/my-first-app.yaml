@@ -1,15 +1,15 @@
 # =============================================================================
 # My First App - Example Application Deployment
 # =============================================================================
-# This file will be discovered by the "infra" ApplicationSet and
+# This file will be discovered by the "general" ApplicationSet and
 # automatically create an ArgoCD Application that deploys example-app
 # to the "default" namespace.
 #
 # Path breakdown:
-#   values/dev/infra/default/example-app/my-first-app.yaml
-#          │    │     │       │           └── Release name
-#          │    │     │       └── Chart name (matches helm-charts/example-app)
-#          │    │     └── Target namespace
+#   values/dev/general/default/example-app/my-first-app.yaml
+#          │    │       │       │           └── Release name
+#          │    │       │       └── Chart name (matches helm-charts/example-app)
+#          │    │       └── Target namespace
 #          │    └── ApplicationSet name (must be enabled in appsets.yaml)
 #          └── Cluster name
 # =============================================================================
