@@ -27,6 +27,7 @@ defaults:
   multiSource: false # Set to true if using chart repository (multi-source)
   argocdNamespace: "argocd"
   project: "default"
+  parentInstance: "appofapps--argocd" # Links ApplicationSets to App-of-Apps in ArgoCD UI
 
 # App-of-Apps Definitions
 appofapps:

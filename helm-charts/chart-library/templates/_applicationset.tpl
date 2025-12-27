@@ -43,6 +43,9 @@ Generates ArgoCD ApplicationSet resources with configurable paths
 {{- /* Defaults with safe access */ -}}
 {{- $defaultsConfig := $.Values.defaults | default dict -}}
 
+{{- /* Get parent App-of-Apps instance label */ -}}
+{{- $parentInstance := $defaultsConfig.parentInstance | default "" -}}
+
 {{- /* Determine if multi-source (handle explicit false) */ -}}
 {{- $multiSource := $defaultsConfig.multiSource | default false -}}
 {{- if hasKey $appSetSpec "multiSource" -}}
@@ -104,9 +107,14 @@ kind: ApplicationSet
 metadata:
   name: {{ $appSetName | quote }}
   namespace: {{ $defaultsConfig.argocdNamespace | default "argocd" | quote }}
-  {{- with $appSetSpec.labels }}
+  {{- if or (ne $parentInstance "") $appSetSpec.labels }}
   labels:
+    {{- if ne $parentInstance "" }}
+    argocd.argoproj.io/instance: {{ $parentInstance | quote }}
+    {{- end }}
+    {{- with $appSetSpec.labels }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
   {{- with $appSetSpec.annotations }}
   annotations:
