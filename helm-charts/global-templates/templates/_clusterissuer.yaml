@@ -1,0 +1,62 @@
+{{/*
+Copyright (C) 2025 XM Cyber
+Author: Devops Infra Team
+*/}}
+
+{{- define "global-templates.clusterissuer" -}}
+{{- $files := .Files }}
+{{- $global_values := .Values.global }}
+{{- $default_values := .Values.clusterissuer_defaults }}
+{{- $common_defaults := .Values.common_defaults | default dict }}
+{{- range .clusterissuers }}
+{{- if not .disabled }}
+{{- $clusterissuer := . }}
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ required "Name is required for clusterissuer" $clusterissuer.name }}
+  labels: {{- include "helpers.labels" (dict "context" $ "customLabels" $clusterissuer.labels "defaultLabels" $common_defaults.labels) | nindent 4 }}
+  {{- if or $clusterissuer.annotations $common_defaults.annotations }}
+  annotations: 
+    {{ include "helpers.annotations" (dict "context" $ "customAnnotations" $clusterissuer.annotations "defaultAnnotations" $common_defaults.annotations) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $clusterissuer.acme }}
+  acme:
+    server: {{ $clusterissuer.acme.server | default $default_values.acme.server }}
+    email: {{ include "helpers.renderGlobalIfExists" (dict "value" ($clusterissuer.acme.email | default $default_values.acme.email) "global" $global_values) }}
+    privateKeySecretRef:
+      name: {{ $clusterissuer.acme.privateKeySecretRef.name }}
+    {{- if $clusterissuer.acme.solvers }}
+    solvers:
+      {{- toYaml $clusterissuer.acme.solvers | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  
+  {{- if $clusterissuer.ca }}
+  ca:
+    secretName: {{ $clusterissuer.ca.secretName }}
+    {{- if $clusterissuer.ca.crlDistributionPoints }}
+    crlDistributionPoints:
+      {{- toYaml $clusterissuer.ca.crlDistributionPoints | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  
+  {{- if $clusterissuer.selfSigned }}
+  selfSigned:
+    {{- toYaml $clusterissuer.selfSigned | nindent 4 }}
+  {{- end }}
+  
+  {{- if $clusterissuer.vault }}
+  vault:
+    {{- toYaml $clusterissuer.vault | nindent 4 }}
+  {{- end }}
+  
+  {{- if $clusterissuer.venafi }}
+  venafi:
+    {{- toYaml $clusterissuer.venafi | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

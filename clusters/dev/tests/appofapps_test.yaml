@@ -1,0 +1,293 @@
+suite: test appofapps
+templates:
+  - templates/appofapps.yaml
+tests:
+  # =============================================================================
+  # Basic App-of-Apps Tests (uses default values from values.yaml)
+  # =============================================================================
+  - it: should generate an appofapps application
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Application
+      - equal:
+          path: metadata.name
+          value: appofapps--argocd
+      - equal:
+          path: metadata.namespace
+          value: argocd
+
+  - it: should not have finalizers when disableFinalizers is true
+    asserts:
+      - notExists:
+          path: metadata.finalizers
+
+  - it: should set labels correctly
+    asserts:
+      - equal:
+          path: metadata.labels
+          value:
+            argocd.argoproj.io/instance: appofapps--argocd
+
+  - it: should set project to default
+    asserts:
+      - equal:
+          path: spec.project
+          value: default
+
+  - it: should set destination namespace
+    asserts:
+      - equal:
+          path: spec.destination.namespace
+          value: argocd
+
+  - it: should set destination server
+    asserts:
+      - equal:
+          path: spec.destination.server
+          value: "https://kubernetes.default.svc"
+
+  # =============================================================================
+  # Single-Source Tests
+  # =============================================================================
+  - it: should use single source when multiSource is false
+    asserts:
+      - exists:
+          path: spec.source
+      - notExists:
+          path: spec.sources
+
+  - it: should set source repoURL
+    asserts:
+      - equal:
+          path: spec.source.repoURL
+          value: "git@github.com:David-Shenker/argo-apps.git"
+
+  - it: should set source path
+    asserts:
+      - equal:
+          path: spec.source.path
+          value: "clusters/dev"
+
+  - it: should set source targetRevision
+    asserts:
+      - equal:
+          path: spec.source.targetRevision
+          value: dev
+
+  - it: should set helm releaseName
+    asserts:
+      - equal:
+          path: spec.source.helm.releaseName
+          value: appofapps
+
+  - it: should set custom valueFiles
+    asserts:
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: "/appsets.yaml"
+      - contains:
+          path: spec.source.helm.valueFiles
+          content: "/values/dev/base/appofapps.yaml"
+
+  # =============================================================================
+  # Sync Policy Tests
+  # =============================================================================
+  - it: should have default sync policy
+    asserts:
+      - equal:
+          path: spec.syncPolicy.automated.prune
+          value: true
+      - equal:
+          path: spec.syncPolicy.automated.selfHeal
+          value: true
+
+  - it: should have default sync options
+    asserts:
+      - contains:
+          path: spec.syncPolicy.syncOptions
+          content: "FailOnSharedResource=true"
+      - contains:
+          path: spec.syncPolicy.syncOptions
+          content: "ApplyOutOfSyncOnly=true"
+      - contains:
+          path: spec.syncPolicy.syncOptions
+          content: "CreateNamespace=true"
+
+  # =============================================================================
+  # Multi-Source Tests (add additional app, test on documentIndex: 1)
+  # =============================================================================
+  - it: should use multi-source when multiSource is true
+    set:
+      chart:
+        repoURL: "https://charts.example.com"
+      appofapps:
+        argocd:
+          test-app:
+            enabled: true
+            multiSource: true
+            chartVersion: "1.0.0"
+    documentIndex: 1
+    asserts:
+      - exists:
+          path: spec.sources
+      - notExists:
+          path: spec.source
+
+  - it: should set chart source for multi-source
+    set:
+      chart:
+        repoURL: "https://charts.example.com"
+      appofapps:
+        argocd:
+          test-app:
+            enabled: true
+            multiSource: true
+            chartVersion: "2.0.0"
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: spec.sources[0].repoURL
+          value: "https://charts.example.com"
+      - equal:
+          path: spec.sources[0].chart
+          value: test-app
+      - equal:
+          path: spec.sources[0].targetRevision
+          value: "2.0.0"
+
+  # =============================================================================
+  # Additional App Tests (test on documentIndex: 1 for added apps)
+  # =============================================================================
+  - it: should generate multiple apps when adding another app
+    set:
+      appofapps:
+        argocd:
+          another-app:
+            enabled: true
+            multiSource: false
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should not generate disabled apps
+    set:
+      appofapps:
+        argocd:
+          disabled-app:
+            enabled: false
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should set custom project on new app
+    set:
+      appofapps:
+        argocd:
+          custom-project-app:
+            enabled: true
+            multiSource: false
+            project: custom-project
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: spec.project
+          value: custom-project
+
+  - it: should set custom server on new app
+    set:
+      appofapps:
+        argocd:
+          custom-server-app:
+            enabled: true
+            multiSource: false
+            server: "https://custom-cluster.example.com"
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: spec.destination.server
+          value: "https://custom-cluster.example.com"
+
+  - it: should override sync policy on new app
+    set:
+      appofapps:
+        argocd:
+          custom-sync-app:
+            enabled: true
+            multiSource: false
+            syncPolicy:
+              automated:
+                prune: false
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: spec.syncPolicy.automated.prune
+          value: false
+      - equal:
+          path: spec.syncPolicy.automated.selfHeal
+          value: true
+
+  - it: should set finalizers when not disabled on new app
+    set:
+      appofapps:
+        argocd:
+          finalizer-app:
+            enabled: true
+            multiSource: false
+            disableFinalizers: false
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: metadata.finalizers
+          value:
+            - resources-finalizer.argocd.argoproj.io
+
+  - it: should set custom finalizers on new app
+    set:
+      appofapps:
+        argocd:
+          custom-finalizer-app:
+            enabled: true
+            multiSource: false
+            disableFinalizers: false
+            finalizers:
+              - custom-finalizer
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: metadata.finalizers
+          value:
+            - custom-finalizer
+
+  - it: should set annotations on new app
+    set:
+      appofapps:
+        argocd:
+          z-annotated-app:
+            enabled: true
+            multiSource: false
+            annotations:
+              custom/annotation: "value"
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            custom/annotation: "value"
+
+  - it: should set labels on new app
+    set:
+      appofapps:
+        argocd:
+          z-labeled-app:
+            enabled: true
+            multiSource: false
+            labels:
+              custom-label: "label-value"
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: metadata.labels
+          value:
+            custom-label: "label-value"

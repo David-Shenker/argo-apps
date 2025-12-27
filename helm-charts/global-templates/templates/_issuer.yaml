@@ -1,0 +1,72 @@
+{{/*
+Copyright (C) 2025 XM Cyber
+Author: Devops Infra Team
+*/}}
+
+{{- define "global-templates.issuer" -}}
+{{- $files := .Files }}
+{{- $global_values := .Values.global }}
+{{- $default_values := .Values.issuer_defaults }}
+{{- $common_defaults := .Values.common_defaults | default dict }}
+{{- range .issuers }}
+{{- if not .disabled }}
+{{- $issuer := . }}
+{{- $namespace := .namespace | default "" }}
+{{- $namespaces := .namespaces | default (list) }}
+{{- if and (empty $namespace) (eq (len $namespaces) 0) }}
+  {{- $namespaces = list (include "helpers.namespace" (dict "ns" .namespace "overrideNs" $.Release.Namespace )) }}
+{{- else if not (empty $namespace) }}
+  {{- $namespaces = list $namespace }}
+{{- end }}
+{{- range $ns := $namespaces }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ required "Name is required for issuer" $issuer.name }}
+  namespace: {{ include "helpers.prefixNamespace" (dict "namespace" $ns "global" $global_values) }}
+  labels: {{- include "helpers.labels" (dict "context" $ "customLabels" $issuer.labels "defaultLabels" $common_defaults.labels) | nindent 4 }}
+  {{- if or $issuer.annotations $common_defaults.annotations }}
+  annotations: 
+    {{ include "helpers.annotations" (dict "context" $ "customAnnotations" $issuer.annotations "defaultAnnotations" $common_defaults.annotations) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if hasKey $issuer "acme" }}
+  acme:
+    server: {{ $issuer.acme.server | default $default_values.acme.server }}
+    email: {{ include "helpers.renderGlobalIfExists" (dict "value" ($issuer.acme.email | default $default_values.acme.email) "global" $global_values) }}
+    privateKeySecretRef:
+      name: {{ $issuer.acme.privateKeySecretRef.name }}
+    {{- if hasKey $issuer.acme "solvers" }}
+    solvers:
+      {{- toYaml $issuer.acme.solvers | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  
+  {{- if hasKey $issuer "ca" }}
+  ca:
+    secretName: {{ $issuer.ca.secretName }}
+    {{- if hasKey $issuer.ca "crlDistributionPoints" }}
+    crlDistributionPoints:
+      {{- toYaml $issuer.ca.crlDistributionPoints | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  
+  {{- if hasKey $issuer "selfSigned" }}
+  selfSigned:
+    {{- toYaml $issuer.selfSigned | nindent 4 }}
+  {{- end }}
+  
+  {{- if hasKey $issuer "vault" }}
+  vault:
+    {{- toYaml $issuer.vault | nindent 4 }}
+  {{- end }}
+  
+  {{- if hasKey $issuer "venafi" }}
+  venafi:
+    {{- toYaml $issuer.venafi | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

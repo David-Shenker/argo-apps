@@ -1,0 +1,235 @@
+suite: test applicationset
+templates:
+  - templates/applicationset.yaml
+values:
+  - ../appsets.yaml
+tests:
+  # =============================================================================
+  # Basic ApplicationSet Tests
+  # =============================================================================
+  - it: should generate infra applicationset
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ApplicationSet
+
+  - it: should generate 3 applicationsets by default
+    asserts:
+      - hasDocuments:
+          count: 3
+
+  - it: should set infra applicationset name
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: metadata.name
+          value: infra
+      - equal:
+          path: metadata.namespace
+          value: argocd
+
+  - it: should set monitoring applicationset name
+    documentIndex: 2
+    asserts:
+      - equal:
+          path: metadata.name
+          value: monitoring
+
+  # =============================================================================
+  # Git Generator Tests
+  # =============================================================================
+  - it: should set git generator repoURL
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.generators[0].git.repoURL
+          value: "git@github.com:David-Shenker/argo-apps.git"
+
+  - it: should set git generator revision
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.generators[0].git.revision
+          value: dev
+
+  - it: should set correct path pattern for infra
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: spec.generators[0].git.files[0].path
+          value: "values/dev/infra/*/*/*.yaml"
+
+  - it: should set correct path pattern for monitoring
+    documentIndex: 2
+    asserts:
+      - equal:
+          path: spec.generators[0].git.files[0].path
+          value: "values/dev/monitoring/*/*/*.yaml"
+
+  # =============================================================================
+  # Sync Policy Tests
+  # =============================================================================
+  - it: should set preserveResourcesOnDeletion to false by default
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.syncPolicy.preserveResourcesOnDeletion
+          value: false
+
+  - it: should enable goTemplate
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.goTemplate
+          value: true
+
+  # =============================================================================
+  # Template Tests
+  # =============================================================================
+  - it: should set template metadata
+    documentIndex: 0
+    asserts:
+      - exists:
+          path: spec.template.metadata.name
+      - equal:
+          path: spec.template.metadata.namespace
+          value: argocd
+      - exists:
+          path: spec.template.metadata.labels.appset
+
+  - it: should set template spec project
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.project
+          value: default
+
+  - it: should set template spec destination server
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.destination.server
+          value: "https://kubernetes.default.svc"
+
+  # =============================================================================
+  # Single-Source Mode Tests
+  # =============================================================================
+  - it: should use single source by default
+    documentIndex: 0
+    asserts:
+      - exists:
+          path: spec.template.spec.source
+      - notExists:
+          path: spec.template.spec.sources
+
+  - it: should set source repoURL
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.source.repoURL
+          value: "git@github.com:David-Shenker/argo-apps.git"
+
+  # =============================================================================
+  # Multi-Source Mode Tests
+  # =============================================================================
+  - it: should use multi-source when configured
+    set:
+      chart:
+        repoURL: "https://charts.example.com"
+      appSets:
+        multi-source-test:
+          enabled: true
+          multiSource: true
+          chartVersion: "1.0.0"
+    documentIndex: 3
+    asserts:
+      - exists:
+          path: spec.template.spec.sources
+      - notExists:
+          path: spec.template.spec.source
+
+  - it: should have values in generator for multi-source
+    set:
+      chart:
+        repoURL: "https://charts.example.com"
+      appSets:
+        multi-source-test:
+          enabled: true
+          multiSource: true
+          chartVersion: "1.0.0"
+    documentIndex: 3
+    asserts:
+      - exists:
+          path: spec.generators[0].git.values.chartVersion
+
+  # =============================================================================
+  # Preserve Resources Tests
+  # =============================================================================
+  - it: should set preserveResourcesOnDeletion when configured
+    set:
+      appSets:
+        preserved:
+          enabled: true
+          preserveResourcesOnDeletion: true
+    documentIndex: 3
+    asserts:
+      - equal:
+          path: spec.syncPolicy.preserveResourcesOnDeletion
+          value: true
+
+  # =============================================================================
+  # Labels and Annotations Tests
+  # =============================================================================
+  - it: should set labels when configured
+    set:
+      appSets:
+        z-labeled:
+          enabled: true
+          labels:
+            custom-label: custom-value
+    documentIndex: 3
+    asserts:
+      - equal:
+          path: metadata.labels.custom-label
+          value: custom-value
+
+  - it: should set annotations when configured
+    set:
+      appSets:
+        z-annotated:
+          enabled: true
+          annotations:
+            custom/annotation: annotation-value
+    documentIndex: 3
+    asserts:
+      - equal:
+          path: metadata.annotations["custom/annotation"]
+          value: annotation-value
+
+  # =============================================================================
+  # Disabled AppSet Tests
+  # =============================================================================
+  - it: should not generate disabled appsets
+    set:
+      appSets:
+        infra:
+          enabled: false
+        monitoring:
+          enabled: true
+        general:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  # =============================================================================
+  # TemplatePatch Tests
+  # =============================================================================
+  - it: should have templatePatch for dynamic overrides
+    documentIndex: 0
+    asserts:
+      - exists:
+          path: spec.templatePatch
+      - matchRegex:
+          path: spec.templatePatch
+          pattern: "application"

@@ -1,0 +1,105 @@
+# Default values for example-app
+# Uses global-templates library for Kubernetes resources
+
+# Deployment configuration
+deployments:
+  - name: example-app
+    namespace: default
+    replicas: 1
+    containers:
+      - name: nginx
+        image:
+          registry: docker.io
+          repository: nginx
+          tag: alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+          - name: html-config
+            mountPath: /usr/share/nginx/html/index.html
+            subPath: index.html
+    volumes:
+      - name: html-config
+        configMap:
+          name: example-app-html
+
+# Service configuration
+services:
+  - name: example-app
+    namespace: default
+    type: ClusterIP
+    ports:
+      - name: http
+        port: 80
+        targetPort: 80
+        protocol: TCP
+
+# ConfigMap configuration
+configmaps:
+  - name: example-app-html
+    namespace: default
+    file_content:
+      index.html: |
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Example App</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                }
+                .container {
+                    text-align: center;
+                    padding: 2rem;
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 16px;
+                    backdrop-filter: blur(10px);
+                }
+                h1 { margin-bottom: 0.5rem; }
+                p { opacity: 0.9; }
+                .info { font-size: 0.85rem; opacity: 0.7; margin-top: 1rem; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🚀 Hello from example-app!</h1>
+                <p>Deployed via ArgoCD GitOps</p>
+                <div class="info">
+                    Using global-templates library
+                </div>
+            </div>
+        </body>
+        </html>
+
+# Custom message (can be overridden in values)
+config:
+  message: "Hello from example-app!"

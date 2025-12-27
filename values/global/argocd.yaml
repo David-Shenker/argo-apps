@@ -1,0 +1,47 @@
+# =============================================================================
+# Global Values for ArgoCD
+# =============================================================================
+# These values apply to ALL clusters.
+# =============================================================================
+
+argo-cd:
+  # Default resource allocations
+  controller:
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+
+  server:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  repoServer:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  # Enable ApplicationSet by default
+  applicationSet:
+    enabled: true
+
+  # Enable notifications by default
+  notifications:
+    enabled: true
+
+  # Redis enabled by default
+  redis:
+    enabled: true
+

@@ -1,0 +1,110 @@
+microservice_defaults: &microservice_defaults
+  serviceAccountName: default
+  imagePullPolicy: IfNotPresent
+  nodeAffinityPreset:
+    type: ""
+  serviceAccount:
+    create: false
+  autoscaling:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 5
+    targetCPU: 80
+    targetMemory: 80
+    metrics: []
+  resources:
+    requests:
+      cpu: 0.1
+      memory: 0.5Gi
+
+exports:
+  defaults:
+    common_defaults:
+      labels: {}
+      annotations: {}
+
+    deployment_defaults: *microservice_defaults
+    statefuleset_defaults: *microservice_defaults
+
+    cronjob_defaults:
+      concurrencyPolicy: Forbid
+      successfulJobsHistoryLimit: 3
+      failedJobsHistoryLimit: 1
+      backoffLimit: 6
+      restartPolicy: OnFailure
+      imagePullPolicy: IfNotPresent
+      serviceAccountName: default
+      nodeAffinityPreset:
+        type: ""
+      resources:
+        requests:
+          cpu: 0.1
+          memory: 0.5Gi
+
+    service_defaults:
+
+    externalsecret_defaults:
+      refreshInterval: "1h"
+      secretStoreRef:
+        kind: "Secret"
+      target:
+        creationPolicy: "Owner"
+      remoteRef:
+        conversionStrategy: Default
+        metadataPolicy: None
+      extract:
+        conversionStrategy: Default
+        metadataPolicy: None
+
+    clusterexternalsecret_defaults:
+      refreshTime: "1m"
+      remoteRef:
+        conversionStrategy: Default
+        metadataPolicy: None
+
+    certificate_defaults:
+      duration: 2160h
+      renewBefore: 720h
+      privateKey:
+        algorithm: RSA
+        encoding: PKCS1
+        size: 2048
+        rotationPolicy: Never
+      issuerRef:
+        kind: ClusterIssuer
+        group: cert-manager.io
+
+    issuer_defaults:
+
+    clusterissuer_defaults:
+    
+    scaledobjects_defaults:
+      minReplicas: 1
+      maxReplicas: 10
+      pollingInterval: 30
+      targetApiVersion: apps/v1
+      targetKind: Deployment
+
+    service_defaults:
+
+    ingress_defaults:
+      ingressClassName: ingress-nginx-internal
+      path: '/'
+      
+    sealedsecrets_defaults:
+
+    roles_defaults:
+    rolebinding_defaults:
+    serviceaccount_defaults:
+
+    hpa_defaults:
+      minReplicas: 3
+      maxReplicas: 30
+      targetApiVersion: apps/v1
+      targetKind: Deployment
+      targetCPUUtilizationPercentage: 60
+    
+    pdb_defaults:
+      minAvailable: 1
+      maxUnavailable: 1
+      matchLabels: { }

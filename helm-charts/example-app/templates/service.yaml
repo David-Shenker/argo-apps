@@ -1,0 +1,1 @@
+{{- include "global-templates.service" (dict "services" .Values.services "Values" .Values "Release" .Release "Chart" .Chart) }}

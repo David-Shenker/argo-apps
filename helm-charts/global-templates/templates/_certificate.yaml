@@ -1,0 +1,107 @@
+{{/*
+Copyright (C) 2025 XM Cyber
+Author: Devops Infra Team
+*/}}
+
+{{- define "global-templates.certificate" -}}
+{{- $files := .Files }}
+{{- $global_values := .Values.global }}
+{{- $default_values := .Values.certificate_defaults }}
+{{- $common_defaults := .Values.common_defaults | default dict }}
+{{- range .certificates }}
+{{- if not .disabled }}
+{{- $certificate := . }}
+{{- if not $certificate.secretName }}
+{{- fail "secretName must be provided for Certificate" }}
+{{- end }}
+{{- if not $certificate.issuerRef }}
+{{- fail "issuerRef must be provided for Certificate" }}
+{{- end }}
+{{- $namespace := .namespace | default "" }}
+{{- $namespaces := .namespaces | default (list) }}
+{{- if and (empty $namespace) (eq (len $namespaces) 0) }}
+  {{- $namespaces = list (include "helpers.namespace" (dict "ns" .namespace "overrideNs" $.Release.Namespace )) }}
+{{- else if not (empty $namespace) }}
+  {{- $namespaces = list $namespace }}
+{{- end }}
+{{- range $ns := $namespaces }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ required "Name is required for certificate" $certificate.name }}
+  namespace: {{ include "helpers.prefixNamespace" (dict "namespace" $ns "global" $global_values) }}
+  labels: {{- include "helpers.labels" (dict "context" $ "customLabels" $certificate.labels "defaultLabels" $common_defaults.labels) | nindent 4 }}
+  {{- if or $certificate.annotations $common_defaults.annotations }}
+  annotations: 
+    {{ include "helpers.annotations" (dict "context" $ "customAnnotations" $certificate.annotations "defaultAnnotations" $common_defaults.annotations) | nindent 4 }}
+  {{- end }}
+spec:
+  secretName: {{ $certificate.secretName }}
+  duration: {{ $certificate.duration | default $default_values.duration | default "2160h" }}
+  renewBefore: {{ $certificate.renewBefore | default $default_values.renewBefore | default "720h" }}
+    {{- if $certificate.subject }}
+  subject:
+    {{- toYaml $certificate.subject | nindent 4 }}
+    {{- else if $default_values.subject }}
+    {{- toYaml $default_values.subject | nindent 4 }}
+    {{- end }}
+    {{- if $certificate.privateKey }}
+  privateKey:
+    algorithm: {{ $certificate.privateKey.algorithm | default $default_values.privateKey.algorithm }}
+    encoding: {{ $certificate.privateKey.encoding | default $default_values.privateKey.encoding }}
+    size: {{ $certificate.privateKey.size | default $default_values.privateKey.size | default 2048 }}
+    rotationPolicy: {{ $certificate.privateKey.rotationPolicy | default $default_values.privateKey.rotationPolicy | default "Never" }}
+    {{- end }}
+    {{- if $certificate.dnsNames }}
+  dnsNames:
+    {{- range $certificate.dnsNames }}
+    - {{ include "helpers.renderGlobalIfExists" (dict "value" . "global" $global_values) }}
+    {{- end }}
+    {{- end }}
+  {{- if $certificate.ipAddresses }}
+  ipAddresses:
+    {{- range $certificate.ipAddresses }}
+    - {{ include "helpers.renderGlobalIfExists" (dict "value" . "global" $global_values) }}
+    {{- end }}
+  {{- end }}
+  {{- if $certificate.uris }}
+  uris:
+    {{- range $certificate.uris }}
+    - {{ include "helpers.renderGlobalIfExists" (dict "value" . "global" $global_values) }}
+    {{- end }}
+  {{- end }}
+  {{- if $certificate.emailAddresses }}
+  emailAddresses:
+    {{- range $certificate.emailAddresses }}
+    - {{ include "helpers.renderGlobalIfExists" (dict "value" . "global" $global_values) }}
+    {{- end }}
+  {{- end }}
+  issuerRef:
+    name: {{ include "helpers.renderGlobalIfExists" (dict "value" (required "issuerRef.name is required for Certificate" $certificate.issuerRef.name) "global" $global_values) }}
+    kind: {{ $certificate.issuerRef.kind | default $default_values.issuerRef.kind }}
+    group: {{ $certificate.issuerRef.group | default $default_values.issuerRef.group }}
+  {{- if $certificate.keystores }}
+  keystores:
+    {{- toYaml $certificate.keystores | nindent 4 }}
+  {{- end }}
+  {{- if $certificate.secretTemplate }}
+  secretTemplate:
+    {{- toYaml $certificate.secretTemplate | nindent 4 }}
+  {{- end }}
+  {{- if hasKey $certificate "isCA" }}
+  isCA: {{ $certificate.isCA }}
+  {{- end }}
+  {{- if $certificate.usages }}
+  usages:
+    {{- range $certificate.usages }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+  {{- if $certificate.commonName }}
+  commonName: {{ include "helpers.renderGlobalIfExists" (dict "value" $certificate.commonName "global" $global_values) }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

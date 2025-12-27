@@ -1,0 +1,62 @@
+# =============================================================================
+# Example: Multi-Source Cluster Configuration
+# =============================================================================
+# Use this configuration when your Helm charts are stored in an external
+# Helm repository (Chartmuseum, Harbor, Artifactory, etc.) and only the
+# values files are in Git.
+#
+# This enables:
+#   - Versioned chart releases from a chart repository
+#   - Values stored in Git for GitOps workflow
+#   - Clear separation between chart code and configuration
+#
+# Directory structure expected:
+#   argo-apps/
+#   └── values/
+#       └── prod/
+#           ├── base/
+#           │   └── my-app.yaml
+#           └── infra/
+#               └── kube-system/
+#                   └── my-app/
+#                       └── my-release.yaml
+# =============================================================================
+
+# Cluster identification
+cluster:
+  name: prod
+  cloud: aws  # Enable cloud-specific values
+
+# Git repository (for values files)
+repo:
+  url: "git@github.com:your-org/argo-apps.git"
+  revision: main
+
+# Helm chart repository
+chart:
+  repoURL: "https://charts.your-company.com"
+  version: "1.0.0"  # Default version, can be overridden per app
+
+# Directory paths
+paths:
+  values: "values"
+  charts: "helm-charts"
+  clusters: "clusters"
+
+# Application defaults
+defaults:
+  multiSource: true   # Multi-source mode
+  argocdNamespace: "argocd"
+  project: "default"
+  ignoreMissingValueFiles: true
+
+# App-of-Apps bootstrap
+appofapps:
+  argocd:
+    cluster-bootstrap:
+      enabled: true
+      multiSource: false  # Bootstrap app uses single-source
+      disableFinalizers: true
+      valueFiles:
+        - "appsets.yaml"
+

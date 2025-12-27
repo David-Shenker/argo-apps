@@ -1,0 +1,16 @@
+apiVersion: v1
+name: appofapps
+description: A Helm chart for k8s cluster
+type: application
+version: 1.0.0
+dependencies:
+- name: global-templates
+  version: 1.12.*
+  repository: "file://../../helm-charts/global-templates"
+  import-values:
+    - global-templates
+- name: chart-library
+  version: 1.0.0
+  repository: "file://../../helm-charts/chart-library"
+  import-values:
+    - chart-library

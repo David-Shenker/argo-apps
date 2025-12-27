@@ -1,0 +1,13 @@
+# applicationsets definitions
+#   appSets:
+#     appSetName:
+#       enabled: true
+appSets:
+  infra:
+    enabled: true
+
+  monitoring:
+    enabled: true
+
+  general:
+    enabled: true

@@ -1,0 +1,25 @@
+# =============================================================================
+# Global Values for example-app
+# =============================================================================
+# These values apply to ALL clusters.
+# Can be overridden by cloud-specific, cluster-specific, or app-specific values.
+# =============================================================================
+
+# Default resources for all environments
+deployments:
+  - name: example-app
+    namespace: default
+    replicas: 1
+    containers:
+      - name: nginx
+        image:
+          registry: docker.io
+          repository: nginx
+          tag: alpine
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi

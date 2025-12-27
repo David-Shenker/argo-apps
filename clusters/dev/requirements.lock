@@ -1,0 +1,9 @@
+dependencies:
+- name: global-templates
+  repository: file://../../helm-charts/global-templates
+  version: 1.12.5
+- name: chart-library
+  repository: file://../../helm-charts/chart-library
+  version: 1.0.0
+digest: sha256:f4570c93f53ee84e79b705d8b1bfbe8f39b9c4280baefedbd1f5eddd917fea05
+generated: "2025-12-27T16:26:08.764669+02:00"

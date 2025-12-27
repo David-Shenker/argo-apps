@@ -1,0 +1,5 @@
+apiVersion: v2
+name: chart-library
+description: A Helm library for k8s
+type: library
+version: 1.0.0

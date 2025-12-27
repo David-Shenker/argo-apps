@@ -1,0 +1,40 @@
+# Cluster Configuration
+cluster:
+  name: dev
+  cloud: "" # Optional: aws, gcp, azure, on-prem
+
+# Repository Configuration
+repo:
+  url: "git@github.com:David-Shenker/argo-apps.git"
+  revision: dev
+
+# Chart Repository Configuration (for multi-source)
+chart:
+  repoURL: ""
+  version: "*"
+
+# Path Configuration
+paths:
+  values: "values"
+  charts: "helm-charts"
+  clusters: "clusters"
+
+# Defaults
+defaults:
+  multiSource: false # Set to true if using chart repository (multi-source)
+  argocdNamespace: "argocd"
+  project: "default"
+
+# App-of-Apps Definitions
+appofapps:
+  argocd:
+    appofapps:
+      enabled: true
+      multiSource: false
+      chartVersion: "1.0.0"
+      labels:
+        argocd.argoproj.io/instance: appofapps--argocd
+      disableFinalizers: true # Failsafe to prevent deletion of everything
+      valueFiles:
+        - "appsets.yaml"
+        - "{{ .valuesDir }}/{{ .cluster }}/base/{{ .chartName }}.yaml"

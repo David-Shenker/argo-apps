@@ -1,0 +1,6 @@
+dependencies:
+- name: global-templates
+  repository: file://../global-templates
+  version: 1.12.5
+digest: sha256:cdaf2d3d58d2cd01930a3faa27717a1e3c5059a5619a976292a63e331b2bcd2c
+generated: "2025-12-27T16:52:31.228852+02:00"

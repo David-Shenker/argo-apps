@@ -1,0 +1,54 @@
+# =============================================================================
+# Example: ApplicationSet Definitions
+# =============================================================================
+# This file defines which ApplicationSets to create for your cluster.
+# Each ApplicationSet will scan a directory pattern and automatically
+# create Applications for each matching values file.
+#
+# Pattern: values/<cluster>/<appset>/<namespace>/<chart>/<release>.yaml
+#
+# Example:
+#   With appSets.infra.enabled: true
+#   ArgoCD will scan: values/prod/infra/*/*/*.yaml
+#   And create an Application for each match.
+# =============================================================================
+
+appSets:
+  # Infrastructure applications (ingress, cert-manager, external-dns, etc.)
+  infra:
+    enabled: true
+    # preserveResourcesOnDeletion: false  # Set true to keep resources on delete
+    # sourceTargetRevision: "main"        # Override git revision
+    # labels:
+    #   team: platform
+
+  # Monitoring stack (prometheus, grafana, loki, etc.)
+  monitoring:
+    enabled: true
+    labels:
+      team: observability
+    annotations:
+      notifications.argoproj.io/subscribe.on-sync-failed.slack: alerts-channel
+
+  # General applications
+  apps:
+    enabled: true
+    labels:
+      team: development
+
+  # Security applications (vault, external-secrets, etc.)
+  security:
+    enabled: true
+    preserveResourcesOnDeletion: true  # Don't delete secrets on app removal
+
+  # Database operators and instances
+  databases:
+    enabled: false  # Disabled by default
+
+  # Example: Multi-source ApplicationSet
+  # Uses charts from external Helm repository
+  external-charts:
+    enabled: false
+    multiSource: true
+    chartVersion: "2.0.0"  # Default chart version
+

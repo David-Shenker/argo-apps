@@ -1,0 +1,84 @@
+# =============================================================================
+# ArgoCD - Self-Managed by App-of-Apps
+# =============================================================================
+# After initial bootstrap, ArgoCD will manage its own configuration
+# through this values file.
+#
+# Initial deployment:
+#   helm install argocd helm-charts/argocd -n argocd --create-namespace
+#
+# Subsequent updates:
+#   Managed automatically by the "infra" ApplicationSet
+# =============================================================================
+
+argo-cd:
+  # Server configuration for dev cluster
+  server:
+    replicas: 1
+
+    # Lower resources for dev
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+
+  # Controller with dev resources
+  controller:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  # Repo Server
+  repoServer:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+
+  # ApplicationSet Controller
+  applicationSet:
+    enabled: true
+    replicas: 1
+
+  # Redis
+  redis:
+    enabled: true
+
+  # Configs
+  configs:
+    cm:
+      # Enable status badge
+      statusbadge.enabled: "true"
+
+      # Faster reconciliation for dev
+      timeout.reconciliation: 60s
+
+# =============================================================================
+# ArgoCD Application Overrides
+# =============================================================================
+application:
+  metadata:
+    annotations:
+      argocd.argoproj.io/sync-wave: "-10"  # Deploy early
+      description: "ArgoCD GitOps Controller (self-managed)"
+  spec:
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+

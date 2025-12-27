@@ -1,0 +1,64 @@
+# =============================================================================
+# Example: Single-Source Cluster Configuration
+# =============================================================================
+# Use this configuration when your Helm charts are stored in the same Git
+# repository as your ArgoCD configurations.
+#
+# Directory structure expected:
+#   argo-apps/
+#   ├── helm-charts/
+#   │   ├── my-app/
+#   │   │   ├── Chart.yaml
+#   │   │   ├── values.yaml
+#   │   │   └── templates/
+#   │   └── another-app/
+#   └── values/
+#       └── prod/
+#           ├── base/
+#           │   └── my-app.yaml
+#           └── infra/
+#               └── kube-system/
+#                   └── my-app/
+#                       └── my-release.yaml
+# =============================================================================
+
+# Cluster identification
+cluster:
+  name: prod
+  cloud: ""  # Optional: aws, gcp, azure, on-prem
+
+# Git repository configuration
+repo:
+  url: "git@github.com:your-org/argo-apps.git"
+  revision: main
+
+# Not needed for single-source
+chart:
+  repoURL: ""
+  version: ""
+
+# Directory paths (defaults shown)
+paths:
+  values: "values"
+  charts: "helm-charts"
+  clusters: "clusters"
+
+# Application defaults
+defaults:
+  multiSource: false  # Single-source mode
+  argocdNamespace: "argocd"
+  project: "default"
+
+# App-of-Apps bootstrap application
+appofapps:
+  argocd:
+    cluster-bootstrap:
+      enabled: true
+      multiSource: false
+      disableFinalizers: true  # Safety: don't delete on app removal
+      labels:
+        app.kubernetes.io/part-of: cluster-management
+      valueFiles:
+        - "appsets.yaml"
+        - "{{ .valuesDir }}/{{ .cluster }}/base/{{ .chartName }}.yaml"
+

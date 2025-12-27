@@ -1,0 +1,172 @@
+# ArgoCD Helm Chart Values
+# This wraps the official argo-cd chart from argoproj/argo-helm
+# Docs: https://github.com/argoproj/argo-helm/tree/main/charts/argo-cd
+
+# =============================================================================
+# Repository Credentials (SSH Key or HTTPS)
+# =============================================================================
+# Configure this section to allow ArgoCD to access your private Git repository.
+# You can provide credentials via:
+#   1. SSH private key (recommended for private repos)
+#   2. Username/password or token (for HTTPS)
+#
+# IMPORTANT: For production, use external secrets management (e.g., Sealed Secrets,
+# External Secrets Operator) instead of storing secrets in values files.
+# =============================================================================
+repoCredentials:
+  # Enable repository credentials secret creation
+  enabled: false
+
+  # Secret name (will have label argocd.argoproj.io/secret-type: repository)
+  name: "repo-creds"
+
+  # Repository URL (SSH or HTTPS format)
+  # SSH format:   git@github.com:your-org/your-repo.git
+  # HTTPS format: https://github.com/your-org/your-repo.git
+  url: ""
+
+  # SSH Private Key (for SSH authentication)
+  # Paste your SSH private key here (including BEGIN/END lines)
+  # Example:
+  #   sshPrivateKey: |
+  #     -----BEGIN OPENSSH PRIVATE KEY-----
+  #     b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAA...
+  #     -----END OPENSSH PRIVATE KEY-----
+  sshPrivateKey: ""
+
+  # Username (for HTTPS authentication)
+  username: ""
+
+  # Password or Personal Access Token (for HTTPS authentication)
+  password: ""
+
+# =============================================================================
+# ArgoCD Chart Configuration
+# =============================================================================
+argo-cd:
+  # Global settings
+  global:
+    # Default logging format (text or json)
+    logging:
+      format: text
+      level: info
+
+  # Controller configuration
+  controller:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  # Server configuration
+  server:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+    # Ingress configuration (disabled by default)
+    ingress:
+      enabled: false
+      # ingressClassName: nginx
+      # hosts:
+      #   - argocd.example.com
+      # tls:
+      #   - secretName: argocd-tls
+      #     hosts:
+      #       - argocd.example.com
+
+    # Service configuration
+    service:
+      type: ClusterIP
+      # type: LoadBalancer
+
+  # Repo Server configuration
+  repoServer:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 50m
+        memory: 128Mi
+
+  # Application Set Controller
+  applicationSet:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+  # Notifications Controller
+  notifications:
+    enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+
+  # Redis configuration
+  redis:
+    enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+
+  # Dex (OIDC provider) - disabled by default
+  dex:
+    enabled: false
+
+  # Configs
+  configs:
+    # Repository credentials (add your repos here)
+    repositories: {}
+    #   private-repo:
+    #     url: git@github.com:your-org/your-repo.git
+    #     sshPrivateKeySecret:
+    #       name: argocd-repo-creds
+    #       key: sshPrivateKey
+
+    # Credential templates
+    credentialTemplates: {}
+
+    # ConfigMap settings
+    cm:
+      # Enable exec feature for terminal access
+      exec.enabled: "false"
+
+      # Enable status badge
+      statusbadge.enabled: "true"
+
+      # Application resync period (default: 180s)
+      timeout.reconciliation: 180s
+
+    # RBAC configuration
+    rbac:
+      # Default policy (readonly for anonymous users)
+      policy.default: role:readonly
+
+      # Admin policy
+      policy.csv: |
+        g, argocd-admins, role:admin
