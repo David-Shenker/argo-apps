@@ -15,8 +15,6 @@ backstage:
     # Add labels for Backstage Kubernetes plugin discovery
     podLabels:
       backstage.io/kubernetes-id: backstage
-    labels:
-      backstage.io/kubernetes-id: backstage
 
     extraAppConfig:
       - filename: app-config.extra.yaml
