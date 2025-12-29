@@ -809,6 +809,605 @@ configmaps:
           owner: data-team
           system: data-platform
 
+        # ============================================
+        # ADDITIONAL COMPONENTS - More Demo Content
+        # ============================================
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: payment-service
+          description: Payment Processing Microservice - Handles payment transactions
+          tags: [payment, microservice, financial]
+          annotations:
+            backstage.io/kubernetes-id: payment-service
+            backstage.io/kubernetes-namespace: production
+            argocd/app-name: payment-service
+            github.com/project-slug: org/payment-service
+            backstage.io/source-location: url:https://github.com/org/payment-service
+            backstage.io/techdocs-ref: dir:docs
+          links:
+            - url: https://payment.example.com
+              title: Production URL
+              icon: web
+            - url: https://github.com/org/payment-service
+              title: Source Code
+              icon: code
+            - url: https://payment.example.com/docs
+              title: API Docs
+              icon: docs
+          labels:
+            tier: application
+            criticality: high
+        spec:
+          type: service
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          consumesApis:
+            - payment-gateway-api
+          providesApis:
+            - payment-api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: notification-service
+          description: Notification Service - Email, SMS, and Push notifications
+          tags: [notification, messaging, communication]
+          annotations:
+            backstage.io/kubernetes-id: notification-service
+            backstage.io/kubernetes-namespace: production
+            argocd/app-name: notification-service
+            github.com/project-slug: org/notification-service
+            backstage.io/source-location: url:https://github.com/org/notification-service
+          links:
+            - url: https://github.com/org/notification-service
+              title: Source Code
+              icon: code
+          labels:
+            tier: application
+        spec:
+          type: service
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          consumesApis:
+            - email-api
+            - sms-api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: analytics-dashboard
+          description: Analytics Dashboard - Real-time business metrics visualization
+          tags: [analytics, dashboard, visualization]
+          annotations:
+            backstage.io/kubernetes-id: analytics-dashboard
+            backstage.io/kubernetes-namespace: production
+            argocd/app-name: analytics-dashboard
+            github.com/project-slug: org/analytics-dashboard
+            backstage.io/source-location: url:https://github.com/org/analytics-dashboard
+          links:
+            - url: https://analytics.example.com
+              title: Dashboard
+              icon: dashboard
+            - url: https://github.com/org/analytics-dashboard
+              title: Source Code
+              icon: code
+          labels:
+            tier: application
+        spec:
+          type: website
+          lifecycle: production
+          owner: data-team
+          system: data-platform
+          consumesApis:
+            - analytics-api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: user-service
+          description: User Management Service - Authentication and user profiles
+          tags: [user, auth, identity]
+          annotations:
+            backstage.io/kubernetes-id: user-service
+            backstage.io/kubernetes-namespace: production
+            argocd/app-name: user-service
+            github.com/project-slug: org/user-service
+            backstage.io/source-location: url:https://github.com/org/user-service
+          links:
+            - url: https://github.com/org/user-service
+              title: Source Code
+              icon: code
+          labels:
+            tier: application
+        spec:
+          type: service
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          providesApis:
+            - user-api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: order-service
+          description: Order Management Service - E-commerce order processing
+          tags: [order, ecommerce, business-logic]
+          annotations:
+            backstage.io/kubernetes-id: order-service
+            backstage.io/kubernetes-namespace: production
+            argocd/app-name: order-service
+            github.com/project-slug: org/order-service
+            backstage.io/source-location: url:https://github.com/org/order-service
+          links:
+            - url: https://github.com/org/order-service
+              title: Source Code
+              icon: code
+          labels:
+            tier: application
+        spec:
+          type: service
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          consumesApis:
+            - payment-api
+            - inventory-api
+          providesApis:
+            - order-api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: inventory-service
+          description: Inventory Management Service - Product stock and warehouse management
+          tags: [inventory, warehouse, logistics]
+          annotations:
+            backstage.io/kubernetes-id: inventory-service
+            backstage.io/kubernetes-namespace: production
+            argocd/app-name: inventory-service
+            github.com/project-slug: org/inventory-service
+            backstage.io/source-location: url:https://github.com/org/inventory-service
+          links:
+            - url: https://github.com/org/inventory-service
+              title: Source Code
+              icon: code
+          labels:
+            tier: application
+        spec:
+          type: service
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          providesApis:
+            - inventory-api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: recommendation-engine
+          description: ML Recommendation Engine - Product recommendations using machine learning
+          tags: [ml, recommendation, ai]
+          annotations:
+            backstage.io/kubernetes-id: recommendation-engine
+            backstage.io/kubernetes-namespace: production
+            argocd/app-name: recommendation-engine
+            github.com/project-slug: org/recommendation-engine
+            backstage.io/source-location: url:https://github.com/org/recommendation-engine
+          links:
+            - url: https://github.com/org/recommendation-engine
+              title: Source Code
+              icon: code
+          labels:
+            tier: application
+        spec:
+          type: service
+          lifecycle: production
+          owner: data-team
+          system: data-platform
+          consumesApis:
+            - ml-api
+          providesApis:
+            - recommendation-api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: search-service
+          description: Search Service - Full-text search and filtering
+          tags: [search, elasticsearch, query]
+          annotations:
+            backstage.io/kubernetes-id: search-service
+            backstage.io/kubernetes-namespace: production
+            argocd/app-name: search-service
+            github.com/project-slug: org/search-service
+            backstage.io/source-location: url:https://github.com/org/search-service
+          links:
+            - url: https://github.com/org/search-service
+              title: Source Code
+              icon: code
+          labels:
+            tier: application
+        spec:
+          type: service
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          providesApis:
+            - search-api
+
+        # ============================================
+        # ADDITIONAL APIs
+        # ============================================
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: payment-api
+          description: Payment Processing API - Secure payment transactions
+          tags: [payment, financial, rest]
+          annotations:
+            github.com/project-slug: org/payment-service
+          links:
+            - url: https://payment.example.com/api/docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: Payment API
+              version: "2.0"
+              description: Payment processing REST API
+            servers:
+              - url: https://payment.example.com/api/v2
+            paths:
+              /payments:
+                post:
+                  summary: Process payment
+                  operationId: processPayment
+              /payments/{id}:
+                get:
+                  summary: Get payment status
+                  operationId: getPayment
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: order-api
+          description: Order Management API - E-commerce order operations
+          tags: [order, ecommerce, rest]
+          annotations:
+            github.com/project-slug: org/order-service
+          links:
+            - url: https://order.example.com/api/docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: Order API
+              version: "1.0"
+            servers:
+              - url: https://order.example.com/api/v1
+            paths:
+              /orders:
+                get:
+                  summary: List orders
+                post:
+                  summary: Create order
+              /orders/{id}:
+                get:
+                  summary: Get order
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: inventory-api
+          description: Inventory Management API - Stock and warehouse operations
+          tags: [inventory, warehouse, rest]
+          annotations:
+            github.com/project-slug: org/inventory-service
+          links:
+            - url: https://inventory.example.com/api/docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: Inventory API
+              version: "1.0"
+            servers:
+              - url: https://inventory.example.com/api/v1
+            paths:
+              /products:
+                get:
+                  summary: List products
+              /products/{id}/stock:
+                get:
+                  summary: Get stock level
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: analytics-api
+          description: Analytics API - Business metrics and reporting
+          tags: [analytics, metrics, rest]
+          annotations:
+            github.com/project-slug: org/analytics-service
+          links:
+            - url: https://analytics.example.com/api/docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: data-team
+          system: data-platform
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: Analytics API
+              version: "1.0"
+            servers:
+              - url: https://analytics.example.com/api/v1
+            paths:
+              /metrics:
+                get:
+                  summary: Get metrics
+              /reports:
+                get:
+                  summary: Generate report
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: recommendation-api
+          description: Recommendation API - ML-powered product recommendations
+          tags: [ml, recommendation, rest]
+          annotations:
+            github.com/project-slug: org/recommendation-engine
+          links:
+            - url: https://recommendation.example.com/api/docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: data-team
+          system: data-platform
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: Recommendation API
+              version: "1.0"
+            servers:
+              - url: https://recommendation.example.com/api/v1
+            paths:
+              /recommendations:
+                get:
+                  summary: Get recommendations
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: search-api
+          description: Search API - Full-text search and filtering
+          tags: [search, query, rest]
+          annotations:
+            github.com/project-slug: org/search-service
+          links:
+            - url: https://search.example.com/api/docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: Search API
+              version: "1.0"
+            servers:
+              - url: https://search.example.com/api/v1
+            paths:
+              /search:
+                get:
+                  summary: Search
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: payment-gateway-api
+          description: External Payment Gateway API - Third-party payment processing
+          tags: [payment, external, rest]
+          links:
+            - url: https://stripe.com/docs/api
+              title: Stripe API Docs
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: email-api
+          description: Email Service API - External email delivery service
+          tags: [email, external, rest]
+          links:
+            - url: https://sendgrid.com/docs/api
+              title: SendGrid API Docs
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: sms-api
+          description: SMS Service API - External SMS delivery service
+          tags: [sms, external, rest]
+          links:
+            - url: https://twilio.com/docs/api
+              title: Twilio API Docs
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: ml-api
+          description: Machine Learning API - ML model serving and inference
+          tags: [ml, ai, rest]
+          annotations:
+            github.com/project-slug: org/ml-platform
+          links:
+            - url: https://ml.example.com/api/docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: data-team
+          system: data-platform
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: ML API
+              version: "1.0"
+            servers:
+              - url: https://ml.example.com/api/v1
+            paths:
+              /predict:
+                post:
+                  summary: Make prediction
+              /models:
+                get:
+                  summary: List models
+
+        # ============================================
+        # ADDITIONAL RESOURCES
+        # ============================================
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Resource
+        metadata:
+          name: elasticsearch-cluster
+          description: Elasticsearch Cluster - Search and analytics engine
+          tags: [search, elasticsearch, infrastructure]
+          annotations:
+            backstage.io/kubernetes-id: elasticsearch
+            backstage.io/kubernetes-namespace: production
+        spec:
+          type: database
+          owner: product-team
+          system: customer-portal
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Resource
+        metadata:
+          name: mongodb-cluster
+          description: MongoDB Cluster - Document database
+          tags: [database, mongodb, nosql]
+          annotations:
+            backstage.io/kubernetes-id: mongodb
+            backstage.io/kubernetes-namespace: production
+        spec:
+          type: database
+          owner: product-team
+          system: customer-portal
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Resource
+        metadata:
+          name: kafka-cluster
+          description: Apache Kafka Cluster - Event streaming platform
+          tags: [messaging, kafka, streaming]
+          annotations:
+            backstage.io/kubernetes-id: kafka
+            backstage.io/kubernetes-namespace: production
+        spec:
+          type: messaging
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Resource
+        metadata:
+          name: prometheus-monitoring
+          description: Prometheus Monitoring Stack - Metrics and alerting
+          tags: [monitoring, metrics, prometheus]
+          annotations:
+            backstage.io/kubernetes-id: prometheus
+            backstage.io/kubernetes-namespace: monitoring
+        spec:
+          type: monitoring
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Resource
+        metadata:
+          name: grafana-dashboards
+          description: Grafana Dashboards - Visualization and analytics
+          tags: [monitoring, visualization, grafana]
+          annotations:
+            backstage.io/view-url: http://grafana.monitoring.svc.cluster.local
+        spec:
+          type: monitoring
+          owner: platform-team
+          system: gitops-platform
+
   # App config
   - name: backstage-app-config
     namespace: backstage
@@ -1011,6 +1610,64 @@ configmaps:
               target: /app/catalog/all.yaml
               rules:
                 - allow: [Component, System, API, Resource, Domain, Group, User]
+          # Enable catalog refresh
+          refreshIntervalSeconds: 100
+
+        # Search configuration
+        search:
+          pg:
+            highlightOptions:
+              useHighlight: true
+              maxWordLength: 35
+              minWordLength: 3
+          # Enable search indexing
+          enableExperimentalSearch: true
+
+        # Lighthouse plugin (optional - for performance audits)
+        lighthouse:
+          baseUrl: http://localhost:3003
+
+        # Cost Insights plugin (optional)
+        costInsights:
+          engineerCost: 200000
+          products:
+            - name: Cloud
+              aggregation: [type, projectId]
+            - name: Data
+              aggregation: [type, projectId]
+
+        # PagerDuty integration (optional)
+        pagerduty:
+          eventsBaseUrl: https://events.pagerduty.com/v2
+          apiBaseUrl: https://api.pagerduty.com
+
+        # GitHub integration
+        integrations:
+          github:
+            - host: github.com
+              token: ${GITHUB_TOKEN}
+            - host: github.example.com
+              token: ${GITHUB_TOKEN}
+              apiBaseUrl: https://github.example.com/api/v3
+
+        # Permission framework
+        permission:
+          enabled: true
+          policy:
+            default: allow
+
+        # GraphQL API
+        graphql:
+          introspection: true
+
+        # Sentry integration (optional)
+        sentry:
+          organization: acme-corp
+          instance: acme-corp
+
+        # Badges configuration
+        badges:
+          enabled: true
 
 # ============================================
 # Global-Templates: Secrets
