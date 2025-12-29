@@ -4,6 +4,8 @@ deployments:
     replicas: 2
     labels:
       backstage.io/kubernetes-id: example-app
+    podLabels:
+      backstage.io/kubernetes-id: example-app
     containers:
       - name: nginx
         image:
@@ -47,6 +49,8 @@ services:
   - name: example-app
     namespace: default
     type: ClusterIP
+    labels:
+      backstage.io/kubernetes-id: example-app
     ports:
       - name: http
         port: 80

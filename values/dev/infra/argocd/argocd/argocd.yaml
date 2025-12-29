@@ -1,6 +1,13 @@
 # ArgoCD self-managed configuration for dev cluster
 
 argo-cd:
+  # Add labels for Backstage Kubernetes plugin discovery
+  global:
+    labels:
+      backstage.io/kubernetes-id: argocd
+    podLabels:
+      backstage.io/kubernetes-id: argocd
+
   server:
     replicas: 1
     resources:
@@ -10,6 +17,8 @@ argo-cd:
       limits:
         cpu: 100m
         memory: 256Mi
+    podLabels:
+      backstage.io/kubernetes-id: argocd
 
   controller:
     replicas: 1
@@ -20,6 +29,8 @@ argo-cd:
       limits:
         cpu: 500m
         memory: 512Mi
+    podLabels:
+      backstage.io/kubernetes-id: argocd
 
   repoServer:
     replicas: 1
@@ -30,10 +41,14 @@ argo-cd:
       limits:
         cpu: 100m
         memory: 256Mi
+    podLabels:
+      backstage.io/kubernetes-id: argocd
 
   applicationSet:
     enabled: true
     replicas: 1
+    podLabels:
+      backstage.io/kubernetes-id: argocd
 
   redis:
     enabled: true

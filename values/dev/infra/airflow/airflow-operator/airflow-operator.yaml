@@ -42,6 +42,8 @@ airflow:
     service:
       type: ClusterIP
       port: 8080
+    podLabels:
+      backstage.io/kubernetes-id: airflow
 
   # Scheduler - increased memory for stability
   scheduler:
@@ -53,6 +55,8 @@ airflow:
       limits:
         cpu: 500m
         memory: 1Gi
+    podLabels:
+      backstage.io/kubernetes-id: airflow
 
   # Celery workers - DISABLED for LocalExecutor
   workers:
