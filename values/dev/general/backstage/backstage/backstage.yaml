@@ -193,6 +193,80 @@ configmaps:
         spec:
           memberOf: [platform-team]
 
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: my-first-app
+          description: My First Application - Example nginx app
+          annotations:
+            backstage.io/kubernetes-id: example-app
+            backstage.io/kubernetes-namespace: default
+            argocd/app-name: my-first-app
+        spec:
+          type: service
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: my-second-app
+          description: My Second Application - Example nginx app
+          annotations:
+            backstage.io/kubernetes-id: example-app-second
+            backstage.io/kubernetes-namespace: default
+            argocd/app-name: my-second-app
+        spec:
+          type: service
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: data-pipeline-dag
+          description: Data Pipeline DAG - ETL workflow for processing records
+          annotations:
+            backstage.io/airflow-dag-id: data_pipeline
+        spec:
+          type: service
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: health-check-dag
+          description: Health Check DAG - System health monitoring and alerts
+          annotations:
+            backstage.io/airflow-dag-id: health_check
+        spec:
+          type: service
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: report-generator-dag
+          description: Report Generator DAG - Daily business report generation
+          annotations:
+            backstage.io/airflow-dag-id: report_generator
+        spec:
+          type: service
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+
   # App config
   - name: backstage-app-config
     namespace: backstage
