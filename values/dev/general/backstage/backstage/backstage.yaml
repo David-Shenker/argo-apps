@@ -116,86 +116,218 @@ configmaps:
     namespace: backstage
     file_content:
       all.yaml: |
+        # ============================================
+        # DOMAINS
+        # ============================================
         ---
         apiVersion: backstage.io/v1alpha1
         kind: Domain
         metadata:
           name: platform
           description: Platform and Infrastructure Domain
+          tags: [infrastructure, platform, devops]
         spec:
           owner: platform-team
 
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Domain
+        metadata:
+          name: data
+          description: Data Engineering and Analytics Domain
+          tags: [data, analytics, etl]
+        spec:
+          owner: data-team
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Domain
+        metadata:
+          name: product
+          description: Product and Customer-Facing Applications Domain
+          tags: [product, customer-facing, frontend]
+        spec:
+          owner: product-team
+
+        # ============================================
+        # SYSTEMS
+        # ============================================
         ---
         apiVersion: backstage.io/v1alpha1
         kind: System
         metadata:
           name: gitops-platform
           description: GitOps Platform powered by ArgoCD
+          tags: [gitops, infrastructure, ci-cd]
         spec:
           owner: platform-team
           domain: platform
 
         ---
         apiVersion: backstage.io/v1alpha1
-        kind: Component
+        kind: System
         metadata:
-          name: argocd
-          description: ArgoCD GitOps Controller
-          annotations:
-            argocd/app-name: argocd
-            backstage.io/kubernetes-id: argocd
-            backstage.io/kubernetes-namespace: argocd
-          labels:
-            app: argocd
+          name: data-platform
+          description: Data Processing and Analytics Platform
+          tags: [data, etl, analytics]
         spec:
-          type: service
-          lifecycle: production
-          owner: platform-team
-          system: gitops-platform
+          owner: data-team
+          domain: data
 
         ---
         apiVersion: backstage.io/v1alpha1
-        kind: Component
+        kind: System
         metadata:
-          name: airflow
-          description: Apache Airflow DAG Orchestrator
-          annotations:
-            backstage.io/kubernetes-id: airflow
-            backstage.io/kubernetes-namespace: airflow
-          labels:
-            app: airflow
+          name: customer-portal
+          description: Customer-Facing Web Applications
+          tags: [frontend, customer, web]
         spec:
-          type: service
-          lifecycle: production
-          owner: platform-team
-          system: gitops-platform
+          owner: product-team
+          domain: product
 
-        ---
-        apiVersion: backstage.io/v1alpha1
-        kind: Component
-        metadata:
-          name: backstage
-          description: Backstage Developer Portal
-          annotations:
-            backstage.io/kubernetes-id: backstage
-            backstage.io/kubernetes-namespace: backstage
-          labels:
-            app: backstage
-        spec:
-          type: website
-          lifecycle: production
-          owner: platform-team
-          system: gitops-platform
-
+        # ============================================
+        # TEAMS (with colors)
+        # ============================================
         ---
         apiVersion: backstage.io/v1alpha1
         kind: Group
         metadata:
           name: platform-team
-          description: Platform Engineering Team
+          description: Platform Engineering Team - Infrastructure & DevOps
+          annotations:
+            backstage.io/edit-url: https://github.com/org/teams/platform-team
         spec:
           type: team
+          profile:
+            displayName: Platform Team
+            email: platform-team@example.com
+            picture: https://api.dicebear.com/7.x/avataaars/svg?seed=platform
+          parent: backstage
           children: []
+          members:
+            - alice-platform
+            - bob-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Group
+        metadata:
+          name: data-team
+          description: Data Engineering Team - ETL & Analytics
+          annotations:
+            backstage.io/edit-url: https://github.com/org/teams/data-team
+        spec:
+          type: team
+          profile:
+            displayName: Data Team
+            email: data-team@example.com
+            picture: https://api.dicebear.com/7.x/avataaars/svg?seed=data
+          parent: backstage
+          children: []
+          members:
+            - charlie-data
+            - diana-data
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Group
+        metadata:
+          name: product-team
+          description: Product Engineering Team - Customer Applications
+          annotations:
+            backstage.io/edit-url: https://github.com/org/teams/product-team
+        spec:
+          type: team
+          profile:
+            displayName: Product Team
+            email: product-team@example.com
+            picture: https://api.dicebear.com/7.x/avataaars/svg?seed=product
+          parent: backstage
+          children: []
+          members:
+            - eve-product
+            - frank-product
+
+        # ============================================
+        # USERS
+        # ============================================
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: User
+        metadata:
+          name: alice-platform
+          description: Platform Engineer
+        spec:
+          profile:
+            displayName: Alice Platform
+            email: alice@example.com
+            picture: https://api.dicebear.com/7.x/avataaars/svg?seed=alice
+          memberOf: [platform-team]
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: User
+        metadata:
+          name: bob-platform
+          description: DevOps Engineer
+        spec:
+          profile:
+            displayName: Bob Platform
+            email: bob@example.com
+            picture: https://api.dicebear.com/7.x/avataaars/svg?seed=bob
+          memberOf: [platform-team]
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: User
+        metadata:
+          name: charlie-data
+          description: Data Engineer
+        spec:
+          profile:
+            displayName: Charlie Data
+            email: charlie@example.com
+            picture: https://api.dicebear.com/7.x/avataaars/svg?seed=charlie
+          memberOf: [data-team]
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: User
+        metadata:
+          name: diana-data
+          description: Analytics Engineer
+        spec:
+          profile:
+            displayName: Diana Data
+            email: diana@example.com
+            picture: https://api.dicebear.com/7.x/avataaars/svg?seed=diana
+          memberOf: [data-team]
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: User
+        metadata:
+          name: eve-product
+          description: Frontend Engineer
+        spec:
+          profile:
+            displayName: Eve Product
+            email: eve@example.com
+            picture: https://api.dicebear.com/7.x/avataaars/svg?seed=eve
+          memberOf: [product-team]
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: User
+        metadata:
+          name: frank-product
+          description: Full Stack Engineer
+        spec:
+          profile:
+            displayName: Frank Product
+            email: frank@example.com
+            picture: https://api.dicebear.com/7.x/avataaars/svg?seed=frank
+          memberOf: [product-team]
 
         ---
         apiVersion: backstage.io/v1alpha1
@@ -203,66 +335,234 @@ configmaps:
         metadata:
           name: guest
         spec:
+          profile:
+            displayName: Guest User
           memberOf: [platform-team]
 
+        # ============================================
+        # PLATFORM COMPONENTS (with K8s integration)
+        # ============================================
         ---
         apiVersion: backstage.io/v1alpha1
         kind: Component
         metadata:
-          name: my-first-app
-          description: My First Application - Example nginx app
+          name: argocd
+          description: ArgoCD GitOps Controller - Continuous Deployment Platform
+          tags: [gitops, infrastructure, kubernetes]
           annotations:
-            backstage.io/kubernetes-id: example-app
-            backstage.io/kubernetes-namespace: default
-            argocd/app-name: my-first-app
+            argocd/app-name: argocd
+            backstage.io/kubernetes-id: argocd
+            backstage.io/kubernetes-namespace: argocd
+            backstage.io/kubernetes-label-selector: 'app.kubernetes.io/name=argocd-server,app.kubernetes.io/name=argocd-repo-server,app.kubernetes.io/name=argocd-application-controller'
+            github.com/project-slug: argoproj/argo-cd
+            backstage.io/view-url: http://argocd-server.argocd.svc.cluster.local
+            backstage.io/source-location: url:https://github.com/argoproj/argo-cd
+          links:
+            - url: http://argocd-server.argocd.svc.cluster.local
+              title: ArgoCD UI
+              icon: dashboard
+            - url: https://argo-cd.readthedocs.io
+              title: Documentation
+              icon: docs
           labels:
-            app: example-app
+            app: argocd
+            tier: infrastructure
         spec:
           type: service
           lifecycle: production
           owner: platform-team
           system: gitops-platform
+          providesApis:
+            - argocd-api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: airflow
+          description: Apache Airflow DAG Orchestrator - Workflow Management Platform
+          tags: [workflow, data-pipeline, orchestration]
+          annotations:
+            backstage.io/kubernetes-id: airflow
+            backstage.io/kubernetes-namespace: airflow
+            backstage.io/kubernetes-label-selector: 'component in (airflow-webserver,airflow-scheduler,airflow-worker)'
+            github.com/project-slug: apache/airflow
+            backstage.io/view-url: http://airflow-operator-web.airflow.svc.cluster.local:8080
+            backstage.io/source-location: url:https://github.com/apache/airflow
+          links:
+            - url: http://airflow-operator-web.airflow.svc.cluster.local:8080
+              title: Airflow UI
+              icon: dashboard
+            - url: https://airflow.apache.org/docs
+              title: Documentation
+              icon: docs
+          labels:
+            app: airflow
+            tier: infrastructure
+        spec:
+          type: service
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+          providesApis:
+            - airflow-api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: backstage
+          description: Backstage Developer Portal - Internal Developer Platform
+          tags: [developer-portal, documentation, catalog]
+          annotations:
+            backstage.io/kubernetes-id: backstage
+            backstage.io/kubernetes-namespace: backstage
+            backstage.io/kubernetes-label-selector: 'app=backstage'
+            github.com/project-slug: backstage/backstage
+            backstage.io/view-url: http://localhost:7007
+            backstage.io/source-location: url:https://github.com/backstage/backstage
+          links:
+            - url: http://localhost:7007
+              title: Backstage UI
+              icon: dashboard
+            - url: https://backstage.io/docs
+              title: Documentation
+              icon: docs
+          labels:
+            app: backstage
+            tier: infrastructure
+        spec:
+          type: website
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+
+        # ============================================
+        # APPLICATION COMPONENTS (with K8s & ArgoCD)
+        # ============================================
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Component
+        metadata:
+          name: my-first-app
+          description: My First Application - Customer-facing web service
+          tags: [web, nginx, customer-facing]
+          annotations:
+            backstage.io/kubernetes-id: example-app
+            backstage.io/kubernetes-namespace: default
+            backstage.io/kubernetes-label-selector: 'app=example-app'
+            argocd/app-name: my-first-app
+            github.com/project-slug: org/my-first-app
+            backstage.io/source-location: url:https://github.com/org/my-first-app
+            backstage.io/techdocs-ref: dir:.
+          links:
+            - url: http://example-app.default.svc.cluster.local
+              title: Service URL
+              icon: web
+            - url: https://github.com/org/my-first-app
+              title: Source Code
+              icon: code
+          labels:
+            app: example-app
+            tier: application
+        spec:
+          type: service
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          consumesApis:
+            - user-api
+          providesApis:
+            - my-first-app-api
 
         ---
         apiVersion: backstage.io/v1alpha1
         kind: Component
         metadata:
           name: my-second-app
-          description: My Second Application - Example nginx app
+          description: My Second Application - Internal microservice
+          tags: [microservice, internal, api]
           annotations:
             backstage.io/kubernetes-id: example-app-second
             backstage.io/kubernetes-namespace: default
+            backstage.io/kubernetes-label-selector: 'app=example-app-second'
             argocd/app-name: my-second-app
+            github.com/project-slug: org/my-second-app
+            backstage.io/source-location: url:https://github.com/org/my-second-app
+            backstage.io/techdocs-ref: dir:.
+          links:
+            - url: http://example-app-second.default.svc.cluster.local
+              title: Service URL
+              icon: web
+            - url: https://github.com/org/my-second-app
+              title: Source Code
+              icon: code
           labels:
             app: example-app-second
+            tier: application
         spec:
           type: service
           lifecycle: production
-          owner: platform-team
-          system: gitops-platform
+          owner: product-team
+          system: customer-portal
+          consumesApis:
+            - user-api
+          providesApis:
+            - my-second-app-api
 
+        # ============================================
+        # AIRFLOW DAG COMPONENTS
+        # ============================================
         ---
         apiVersion: backstage.io/v1alpha1
         kind: Component
         metadata:
           name: data-pipeline-dag
-          description: Data Pipeline DAG - ETL workflow for processing records
+          description: Data Pipeline DAG - ETL workflow for processing customer records
+          tags: [etl, data-pipeline, airflow]
           annotations:
             backstage.io/airflow-dag-id: data_pipeline
+            backstage.io/view-url: http://airflow-operator-web.airflow.svc.cluster.local:8080/dags/data_pipeline
+            github.com/project-slug: org/data-pipelines
+            backstage.io/source-location: url:https://github.com/org/data-pipelines
+          links:
+            - url: http://airflow-operator-web.airflow.svc.cluster.local:8080/dags/data_pipeline
+              title: DAG View
+              icon: dashboard
+            - url: https://github.com/org/data-pipelines/blob/main/dags/data_pipeline.py
+              title: Source Code
+              icon: code
+          labels:
+            dag: data-pipeline
+            team: data-team
         spec:
           type: service
           lifecycle: production
-          owner: platform-team
-          system: gitops-platform
+          owner: data-team
+          system: data-platform
 
         ---
         apiVersion: backstage.io/v1alpha1
         kind: Component
         metadata:
           name: health-check-dag
-          description: Health Check DAG - System health monitoring and alerts
+          description: Health Check DAG - System health monitoring and alerting
+          tags: [monitoring, health-check, alerts]
           annotations:
             backstage.io/airflow-dag-id: health_check
+            backstage.io/view-url: http://airflow-operator-web.airflow.svc.cluster.local:8080/dags/health_check
+            github.com/project-slug: org/monitoring-pipelines
+            backstage.io/source-location: url:https://github.com/org/monitoring-pipelines
+          links:
+            - url: http://airflow-operator-web.airflow.svc.cluster.local:8080/dags/health_check
+              title: DAG View
+              icon: dashboard
+            - url: https://github.com/org/monitoring-pipelines/blob/main/dags/health_check.py
+              title: Source Code
+              icon: code
+          labels:
+            dag: health-check
+            team: platform-team
         spec:
           type: service
           lifecycle: production
@@ -274,14 +574,240 @@ configmaps:
         kind: Component
         metadata:
           name: report-generator-dag
-          description: Report Generator DAG - Daily business report generation
+          description: Report Generator DAG - Daily business intelligence reports
+          tags: [reports, analytics, bi]
           annotations:
             backstage.io/airflow-dag-id: report_generator
+            backstage.io/view-url: http://airflow-operator-web.airflow.svc.cluster.local:8080/dags/report_generator
+            github.com/project-slug: org/analytics-pipelines
+            backstage.io/source-location: url:https://github.com/org/analytics-pipelines
+          links:
+            - url: http://airflow-operator-web.airflow.svc.cluster.local:8080/dags/report_generator
+              title: DAG View
+              icon: dashboard
+            - url: https://github.com/org/analytics-pipelines/blob/main/dags/report_generator.py
+              title: Source Code
+              icon: code
+          labels:
+            dag: report-generator
+            team: data-team
         spec:
           type: service
           lifecycle: production
+          owner: data-team
+          system: data-platform
+
+        # ============================================
+        # APIs
+        # ============================================
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: argocd-api
+          description: ArgoCD REST API - GitOps application management
+          tags: [gitops, kubernetes, rest]
+          annotations:
+            backstage.io/view-url: http://argocd-server.argocd.svc.cluster.local/api/v1
+            github.com/project-slug: argoproj/argo-cd
+          links:
+            - url: https://argo-cd.readthedocs.io/en/stable/developer-guide/api-docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
           owner: platform-team
           system: gitops-platform
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: ArgoCD API
+              version: "2.0"
+              description: ArgoCD REST API for managing GitOps applications
+            servers:
+              - url: http://argocd-server.argocd.svc.cluster.local/api/v1
+            paths:
+              /applications:
+                get:
+                  summary: List applications
+                  operationId: listApplications
+              /applications/{name}:
+                get:
+                  summary: Get application
+                  operationId: getApplication
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: airflow-api
+          description: Apache Airflow REST API - DAG and workflow management
+          tags: [workflow, data-pipeline, rest]
+          annotations:
+            backstage.io/view-url: http://airflow-operator-web.airflow.svc.cluster.local:8080/api/v1
+            github.com/project-slug: apache/airflow
+          links:
+            - url: https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: platform-team
+          system: gitops-platform
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: Airflow API
+              version: "2.8"
+              description: Apache Airflow REST API for managing DAGs and workflows
+            servers:
+              - url: http://airflow-operator-web.airflow.svc.cluster.local:8080/api/v1
+            paths:
+              /dags:
+                get:
+                  summary: List DAGs
+                  operationId: listDags
+              /dags/{dag_id}/dagRuns:
+                post:
+                  summary: Trigger DAG
+                  operationId: triggerDag
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: user-api
+          description: User Management API - Customer and user data management
+          tags: [user, customer, rest]
+          annotations:
+            github.com/project-slug: org/user-service
+          links:
+            - url: https://api.example.com/docs/user-api
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: User API
+              version: "1.0"
+              description: User management REST API
+            servers:
+              - url: https://api.example.com/v1
+            paths:
+              /users:
+                get:
+                  summary: List users
+                  operationId: listUsers
+              /users/{id}:
+                get:
+                  summary: Get user
+                  operationId: getUser
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: my-first-app-api
+          description: My First App REST API
+          tags: [rest, web]
+          annotations:
+            github.com/project-slug: org/my-first-app
+          links:
+            - url: http://example-app.default.svc.cluster.local/api/docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: My First App API
+              version: "1.0"
+            servers:
+              - url: http://example-app.default.svc.cluster.local/api
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: API
+        metadata:
+          name: my-second-app-api
+          description: My Second App REST API
+          tags: [rest, microservice]
+          annotations:
+            github.com/project-slug: org/my-second-app
+          links:
+            - url: http://example-app-second.default.svc.cluster.local/api/docs
+              title: API Documentation
+              icon: docs
+        spec:
+          type: rest
+          lifecycle: production
+          owner: product-team
+          system: customer-portal
+          definition: |
+            openapi: "3.0.0"
+            info:
+              title: My Second App API
+              version: "1.0"
+            servers:
+              - url: http://example-app-second.default.svc.cluster.local/api
+
+        # ============================================
+        # RESOURCES
+        # ============================================
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Resource
+        metadata:
+          name: postgresql-database
+          description: PostgreSQL Database Cluster
+          tags: [database, postgresql, infrastructure]
+          annotations:
+            backstage.io/kubernetes-id: postgresql
+            backstage.io/kubernetes-namespace: default
+        spec:
+          type: database
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Resource
+        metadata:
+          name: redis-cache
+          description: Redis Cache Cluster
+          tags: [cache, redis, infrastructure]
+          annotations:
+            backstage.io/kubernetes-id: redis
+            backstage.io/kubernetes-namespace: default
+        spec:
+          type: cache
+          owner: platform-team
+          system: gitops-platform
+
+        ---
+        apiVersion: backstage.io/v1alpha1
+        kind: Resource
+        metadata:
+          name: s3-storage
+          description: S3 Object Storage Bucket
+          tags: [storage, s3, data]
+          annotations:
+            backstage.io/view-url: https://s3.console.aws.amazon.com/s3/buckets/data-bucket
+        spec:
+          type: storage
+          owner: data-team
+          system: data-platform
 
   # App config
   - name: backstage-app-config
@@ -291,9 +817,24 @@ configmaps:
         app:
           title: Dev Backstage
           baseUrl: http://localhost:7007
+          # Theme customization
+          theme:
+            light:
+              palette:
+                primary:
+                  main: '#1976d2'
+                secondary:
+                  main: '#dc004e'
+            dark:
+              palette:
+                primary:
+                  main: '#90caf9'
+                secondary:
+                  main: '#f48fb1'
 
         organization:
-          name: My Organization
+          name: Acme Corporation
+          logo: https://api.dicebear.com/7.x/shapes/svg?seed=acme
 
         backend:
           baseUrl: http://localhost:7007
@@ -343,6 +884,22 @@ configmaps:
           # Enable pod logs and status visibility
           podMetrics:
             enabled: true
+          # Object types to show
+          objectTypes:
+            - kind: pod
+              apiVersion: v1
+            - kind: service
+              apiVersion: v1
+            - kind: deployment
+              apiVersion: apps/v1
+            - kind: replicaset
+              apiVersion: apps/v1
+            - kind: ingress
+              apiVersion: networking.k8s.io/v1
+            - kind: configmap
+              apiVersion: v1
+            - kind: secret
+              apiVersion: v1
 
         # ArgoCD plugin configuration
         argocd:
@@ -435,6 +992,11 @@ configmaps:
             runIn: local
           publisher:
             type: local
+          # Enable tech docs for components
+          annotations:
+            backstage.io/techdocs-ref: dir:.
+          # Default tech docs location
+          defaultLocation: https://github.com/org/repo/tree/main/docs
 
         # Software catalog configuration
         catalog:
