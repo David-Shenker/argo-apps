@@ -12,10 +12,6 @@ backstage:
       tag: latest
       pullPolicy: IfNotPresent
 
-    # Add labels for Backstage Kubernetes plugin discovery
-    podLabels:
-      backstage.io/kubernetes-id: backstage
-
     extraAppConfig:
       - filename: app-config.extra.yaml
         configMapRef: backstage-app-config
