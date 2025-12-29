@@ -203,6 +203,8 @@ configmaps:
             backstage.io/kubernetes-id: example-app
             backstage.io/kubernetes-namespace: default
             argocd/app-name: my-first-app
+          labels:
+            app: example-app
         spec:
           type: service
           lifecycle: production
@@ -219,6 +221,8 @@ configmaps:
             backstage.io/kubernetes-id: example-app-second
             backstage.io/kubernetes-namespace: default
             argocd/app-name: my-second-app
+          labels:
+            app: example-app-second
         spec:
           type: service
           lifecycle: production
@@ -315,7 +319,7 @@ configmaps:
                   url: https://kubernetes.default.svc.cluster.local
                   authProvider: serviceAccount
                   skipTLSVerify: true
-                  skipMetricsLookup: true
+                  skipMetricsLookup: false
                   caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
                   customResources:
                     - group: argoproj.io
@@ -324,6 +328,9 @@ configmaps:
                     - group: argoproj.io
                       apiVersion: v1alpha1
                       plural: applicationsets
+          # Enable pod logs and status visibility
+          podMetrics:
+            enabled: true
 
         # ArgoCD plugin configuration
         argocd:
@@ -342,6 +349,8 @@ configmaps:
           baseUrl: http://airflow-operator-web.airflow.svc.cluster.local:8080
           username: ${AIRFLOW_USERNAME}
           password: ${AIRFLOW_PASSWORD}
+          # Enable DAG triggering and log viewing
+          experimental: true
 
         # Proxy configuration for plugins
         proxy:
@@ -354,6 +363,22 @@ configmaps:
                 Cookie: argocd.token=${ARGOCD_AUTH_TOKEN}
             '/airflow':
               target: http://airflow-operator-web.airflow.svc.cluster.local:8080
+              changeOrigin: true
+              secure: false
+            '/airflow/api':
+              target: http://airflow-operator-web.airflow.svc.cluster.local:8080/api/v1
+              changeOrigin: true
+              secure: false
+            '/airflow/health':
+              target: http://airflow-operator-web.airflow.svc.cluster.local:8080/health
+              changeOrigin: true
+              secure: false
+            '/airflow/dags':
+              target: http://airflow-operator-web.airflow.svc.cluster.local:8080/dags
+              changeOrigin: true
+              secure: false
+            '/airflow/logs':
+              target: http://airflow-operator-web.airflow.svc.cluster.local:8080/logs
               changeOrigin: true
               secure: false
 
@@ -408,6 +433,8 @@ clusterroles:
         resources:
           - pods
           - pods/log
+          - pods/status
+          - pods/exec
           - services
           - configmaps
           - namespaces

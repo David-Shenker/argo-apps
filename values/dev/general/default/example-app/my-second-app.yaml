@@ -2,6 +2,8 @@ deployments:
   - name: example-app-second
     namespace: default
     replicas: 2
+    labels:
+      backstage.io/kubernetes-id: example-app-second
     containers:
       - name: nginx
         image:
