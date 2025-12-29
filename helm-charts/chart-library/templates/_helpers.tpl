@@ -62,16 +62,11 @@ syncOptions:
 {{- $vars := .vars | default dict -}}
 {{- $prefix := .prefix | default "" -}}
 {{- $ctx := .ctx -}}
-{{- $tplCtx := dict
-    "valuesDir" ($vars.valuesDir | default "values")
-    "cluster" ($vars.cluster | default "")
-    "cloud" ($vars.cloud | default "")
-    "appSetName" ($vars.appSetName | default "")
-    "namespace" ($vars.namespace | default "")
-    "chartName" ($vars.chartName | default "")
-    "releaseName" ($vars.releaseName | default "")
-    "sourcePath" ($vars.sourcePath | default "")
--}}
+{{- $tplCtx := dict -}}
+{{- /* Add all variables from vars to template context dynamically */}}
+{{- range $key, $value := $vars }}
+  {{- $_ := set $tplCtx $key $value -}}
+{{- end }}
 {{- range $config }}
   {{- $rendered := tpl . $tplCtx -}}
   {{- if and $rendered (not (contains "//" $rendered)) (not (contains "/_defaults//" $rendered)) }}
@@ -119,20 +114,35 @@ syncOptions:
     "chartName" $goTpl.chartName
     "releaseName" $goTpl.filename
 -}}
+{{- /* Add all additional segments from goTpl dynamically */}}
+{{- range $key, $value := $goTpl }}
+  {{- if and (ne $key "namespace") (ne $key "chartName") (ne $key "filename") (ne $key "releaseName") (ne $key "appName") }}
+    {{- $_ := set $vars $key $value -}}
+  {{- end }}
+{{- end }}
 {{- include "chart-library.renderValueFiles" (dict "valueFilesConfig" $valueFilesConfig "vars" $vars "prefix" $prefix "ctx" .ctx) -}}
 {{- end -}}
 
 {{/* ApplicationSet Go Template Expression Helpers */}}
 
 {{- define "chart-library.appSetGoTpl" -}}
-{{- $nsIdx := .segments.namespace | default 3 -}}
-{{- $chartIdx := .segments.chartName | default 4 -}}
+{{- $segments := .segments | default dict -}}
+{{- $nsIdx := $segments.namespace | default 3 -}}
+{{- $chartIdx := $segments.chartName | default 4 -}}
 {{- $ns := printf "{{ index .path.segments %d }}" (int $nsIdx) -}}
 {{- $chart := printf "{{ index .path.segments %d }}" (int $chartIdx) -}}
 {{- $filename := "{{ trimSuffix \".yaml\" .path.filename }}" -}}
 {{- $release := printf "{{ .chartReleaseName | default (ternary (trimSuffix \".yaml\" .path.filename) (printf \"%%s-%%s\" (index .path.segments %d) (trimSuffix \".yaml\" .path.filename)) (contains (index .path.segments %d) (trimSuffix \".yaml\" .path.filename))) }}" (int $chartIdx) (int $chartIdx) -}}
 {{- $appName := printf "%s--%s" $release $ns -}}
-{{- dict "namespace" $ns "chartName" $chart "filename" $filename "releaseName" $release "appName" $appName | toYaml -}}
+{{- $result := dict "namespace" $ns "chartName" $chart "filename" $filename "releaseName" $release "appName" $appName -}}
+{{- /* Extract any additional segments defined in configuration */}}
+{{- range $key, $idx := $segments }}
+  {{- if and (ne $key "namespace") (ne $key "chartName") }}
+    {{- $segmentValue := printf "{{ index .path.segments %d }}" (int $idx) -}}
+    {{- $_ := set $result $key $segmentValue -}}
+  {{- end }}
+{{- end }}
+{{- $result | toYaml -}}
 {{- end -}}
 
 {{/* Standard Helm Chart Helpers */}}

@@ -16,7 +16,13 @@
 {{- $multiSource := $appSet.multiSource | default $defaults.multiSource | default false -}}
 {{- $repoURL := $appSet.repoURL | default $repo.url | required "repo.url is required" -}}
 {{- $revision := $appSet.revision | default $repo.revision | default "HEAD" -}}
-{{- $pathPattern := $appSet.pathPattern | default (printf "%s/%s/%s/*/*/*.yaml" $valuesDir $cluster $appSetName) -}}
+{{- $defaultPathPattern := printf "%s/%s/%s/*/*/*.yaml" $valuesDir $cluster $appSetName -}}
+{{- $genPathPattern := $generator.pathPattern | default "" -}}
+{{- if and $genPathPattern (not $appSet.pathPattern) }}
+{{- $pathPattern := $genPathPattern | replace "{{ .appSetName }}" $appSetName | replace "{{ .cluster }}" $cluster | replace "{{ .valuesDir }}" $valuesDir -}}
+{{- else }}
+{{- $pathPattern := $appSet.pathPattern | default $defaultPathPattern -}}
+{{- end }}
 {{- $goTpl := include "chart-library.appSetGoTpl" (dict "segments" $segments) | fromYaml -}}
 {{- $valueFilesArgs := dict
     "appSet" $appSet

@@ -28,6 +28,17 @@ paths:
     - "{{ .valuesDir }}/{{ .cluster }}/_defaults/{{ .chartName }}.yaml"
     - "{{ .valuesDir }}/{{ .cluster }}/{{ .appSetName }}/{{ .namespace }}/{{ .chartName }}/{{ .releaseName }}.yaml"
 
+# Generator configuration - customize pathPattern and segments to match your folder structure
+# Example: To add realm support, uncomment and modify:
+# generator:
+#   pathPattern: "values/{{ .cluster }}/*/{{ .appSetName }}/*/*/*.yaml"
+#   segments:
+#     realm: 2
+#     appSetName: 3
+#     namespace: 4
+#     chartName: 5
+# Then update appSetValueFiles to include: {{ .realm }}
+
 defaults:
   multiSource: false
   argocdNamespace: "argocd"
